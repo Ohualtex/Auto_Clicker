@@ -1,2 +1,1 @@
-Sürekli tıklamaktan usandınız mı ?
-  Bunu Deneyin ^-^
+Sürekli tıklamaktan usandınız mı? Bunu Deneyin ^-^

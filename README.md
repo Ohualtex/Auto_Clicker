@@ -1,1 +1,2 @@
-# Auto_Clicker
+Sürekli tıklamaktan usandınız mı ?
+  Bunu Deneyin ^-^

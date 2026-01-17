@@ -72,7 +72,7 @@ public class AutoClicker extends JFrame {
                 return;
             }
 
-            // Eğer CPS çok yüksekse bilgisayar donabilir, sınır koyalım (Opsiyonel)
+            // Eğer CPS çok yüksekse bilgisayar donabilir, sınır koyalım
             if (cps > 500) {
                 JOptionPane.showMessageDialog(this, "500 CPS üzeri bilgisayarı dondurabilir!");
                 return;

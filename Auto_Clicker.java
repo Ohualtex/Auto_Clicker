@@ -3,98 +3,101 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 
 public class AutoClicker extends JFrame {
 
-    private JTextField cpsField; // Saniyedeki Tıklama Sayısı (CPS)
-    private JButton toggleButton; // Başlat/Durdur tek buton
+    private JTextField cpsField;
+    private JButton toggleButton;
+    private JLabel statusLabel;
     private boolean isRunning = false;
     private Thread clickerThread;
 
     public AutoClicker() {
         // --- Arayüz Ayarları ---
-        setTitle("AutoClicker");
-        setSize(350, 150);
+        setTitle("Akıllı AutoClicker");
+        setSize(400, 220);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new FlowLayout());
-        setAlwaysOnTop(true); // Pencere hep üstte
-        setFocusable(true);   // Klavye dinlemesi için odaklanabilir yap
+        setAlwaysOnTop(true);
 
         // --- Bileşenler ---
-        JLabel label = new JLabel("Saniyede Kaç Tık (CPS):");
-        cpsField = new JTextField("10", 5); // Varsayılan 10 CPS
-        toggleButton = new JButton("BAŞLAT (Space)");
-
-        // --- Klavye Kısayolu (Space Tuşu) ---
-        // Pencere seçiliyken Boşluk tuşuna basınca tetiklenir
-        this.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-                    toggleClicker();
-                }
-            }
-        });
+        JLabel label = new JLabel("Saniyede Tıklama (CPS):");
+        cpsField = new JTextField("10", 5);
+        
+        toggleButton = new JButton("BAŞLAT");
+        toggleButton.setPreferredSize(new Dimension(350, 40));
+        
+        // Bilgilendirme Etiketi
+        statusLabel = new JLabel("<html><center>Mouse HAREKET ederken tıklama durur.<br>Kapatmak için SOL ÜST KÖŞEYE götürün.</center></html>");
+        statusLabel.setForeground(Color.BLUE);
+        statusLabel.setPreferredSize(new Dimension(350, 60));
+        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         // --- Buton Aksiyonu ---
         toggleButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                toggleClicker();
+                if (isRunning) {
+                    stopClicking();
+                } else {
+                    startClicking();
+                }
             }
         });
 
-        // Bileşenleri ekle
         add(label);
         add(cpsField);
         add(toggleButton);
-    }
-
-    // --- Başlat / Durdur Mantığı ---
-    private void toggleClicker() {
-        if (isRunning) {
-            stopClicking();
-        } else {
-            startClicking();
-        }
-        // Tuşa basıldıktan sonra odak pencerede kalsın ki Space çalışmaya devam etsin
-        this.requestFocus();
+        add(statusLabel);
     }
 
     private void startClicking() {
         try {
-            // CPS Hesabı: Saniyede X tık demek, 1000ms / X kadar beklemek demektir.
             int cps = Integer.parseInt(cpsField.getText());
-            if (cps <= 0) {
-                JOptionPane.showMessageDialog(this, "0'dan büyük bir değer girin!");
-                return;
-            }
-
-            // Eğer CPS çok yüksekse bilgisayar donabilir, sınır koyalım
-            if (cps > 500) {
-                JOptionPane.showMessageDialog(this, "500 CPS üzeri bilgisayarı dondurabilir!");
-                return;
-            }
-
-            int delay = 1000 / cps; // Bekleme süresini hesapla
+            int targetDelay = 1000 / cps;
 
             isRunning = true;
-            toggleButton.setText("DURDUR (Space)");
-            toggleButton.setBackground(Color.RED); // Görsel uyarı
-            cpsField.setEnabled(false); // Çalışırken değiştirmeyi engelle
+            toggleButton.setText("ÇALIŞIYOR... (Mouse'u Sabit Tut)");
+            toggleButton.setBackground(Color.GREEN);
+            cpsField.setEnabled(false);
 
             clickerThread = new Thread(() -> {
                 try {
                     Robot robot = new Robot();
-                    // Kullanıcıya hazırlanması için 2 saniye süre ver
-                    Thread.sleep(2000);
+                    Thread.sleep(2000); // 2 saniye hazırlanma süresi
 
                     while (isRunning) {
+                        // 1. Mouse'un ilk konumunu al
+                        Point p1 = MouseInfo.getPointerInfo().getLocation();
+                        
+                        // ACİL ÇIKIŞ: Sol Üst Köşe
+                        if (p1.x < 5 && p1.y < 5) {
+                            stopClickingFromThread();
+                            break;
+                        }
+
+                        // 2. Çok kısa bekle 
+                        // Tıklama hızını etkilememesi için gecikmeyi bölüyoruz
+                        int checkDuration = Math.min(targetDelay / 2, 50); 
+                        Thread.sleep(checkDuration);
+
+                        // 3. Mouse'un son konumunu al
+                        Point p2 = MouseInfo.getPointerInfo().getLocation();
+
+                        // 4. HAREKET KONTROLÜ
+                        // Eğer mouse 5 pikselden fazla oynamışsa TIKLAMA YAPMA!
+                        if (Math.abs(p1.x - p2.x) > 5 || Math.abs(p1.y - p2.y) > 5) {
+                            // Kullanıcı mouse'u kaydırıyor, tıklamayı pas geç
+                            continue; 
+                        }
+
+                        // Mouse sabitse tıkla
                         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-                        Thread.sleep(delay);
+                        
+                        // Geriye kalan süreyi bekle
+                        int remainingDelay = targetDelay - checkDuration;
+                        if (remainingDelay > 0) Thread.sleep(remainingDelay);
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -104,20 +107,31 @@ public class AutoClicker extends JFrame {
             clickerThread.start();
 
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Lütfen geçerli bir sayı girin!");
+            JOptionPane.showMessageDialog(this, "Geçerli bir sayı girin!");
         }
     }
 
     private void stopClicking() {
         isRunning = false;
-        toggleButton.setText("BAŞLAT (Space)");
-        toggleButton.setBackground(null); // Rengi normale döndür
+        resetUI();
+    }
+
+    private void stopClickingFromThread() {
+        isRunning = false;
+        SwingUtilities.invokeLater(() -> {
+            resetUI();
+            Toolkit.getDefaultToolkit().beep();
+            JOptionPane.showMessageDialog(null, "Güvenli çıkış yapıldı!");
+        });
+    }
+
+    private void resetUI() {
+        toggleButton.setText("BAŞLAT");
+        toggleButton.setBackground(null);
         cpsField.setEnabled(true);
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new AutoClicker().setVisible(true);
-        });
+        SwingUtilities.invokeLater(() -> new AutoClicker().setVisible(true));
     }
 }

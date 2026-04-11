@@ -57,6 +57,12 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private JLabel statusLabel;
     private JButton hotkeyBtn;
     
+    // Limits
+    private JCheckBox useLimitBox;
+    private JComboBox<String> limitTypeBox; 
+    private JTextField limitValField;
+    private JComboBox<String> limitActionBox;
+
     // Mouse specific
     private JComboBox<String> mouseBtnBox;
     private JSlider mouseCpsSlider;
@@ -95,8 +101,8 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             SwingUtilities.updateComponentTreeUI(this);
         } catch(Exception e) { }
 
-        setTitle("AutoClicker Ultimate v3");
-        setSize(560, 520);
+        setTitle("AutoClicker Ultimate v4");
+        setSize(560, 580);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setAlwaysOnTop(true);
@@ -117,9 +123,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         try (FileInputStream fis = new FileInputStream(CONFIG_FILE)) {
             props.load(fis);
             triggerKey = Integer.parseInt(props.getProperty("hotkey", String.valueOf(NativeKeyEvent.VC_F6)));
-        } catch (Exception e) {
-            System.out.println("Config bulunamadı, varsayılanlar kullanılacak.");
-        }
+        } catch (Exception e) {}
     }
 
     private void saveConfig() {
@@ -142,6 +146,11 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             props.setProperty("chainActions", sb.toString());
             props.setProperty("chainHumanizer", String.valueOf(chainHumanizerBox.isSelected()));
 
+            props.setProperty("useLimit", String.valueOf(useLimitBox.isSelected()));
+            props.setProperty("limitType", String.valueOf(limitTypeBox.getSelectedIndex()));
+            props.setProperty("limitVal", limitValField.getText());
+            props.setProperty("limitAction", String.valueOf(limitActionBox.getSelectedIndex()));
+
             props.store(fos, "AutoClicker Configuration");
         } catch (Exception e) {
             e.printStackTrace();
@@ -160,9 +169,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        tabbedPane.addTab("🖱️ Fare Makrosu", buildMousePanel());
-        tabbedPane.addTab("⌨️ Klavye Makrosu", buildKeyboardPanel());
-        tabbedPane.addTab("🔗 Kombinasyon (Zincir)", buildChainPanel());
+        tabbedPane.addTab("🖱️ Fare", buildMousePanel());
+        tabbedPane.addTab("⌨️ Klavye", buildKeyboardPanel());
+        tabbedPane.addTab("🔗 Kombinasyon", buildChainPanel());
         tabbedPane.addTab("⚙️ Ayarlar", buildSettingsPanel());
 
         add(headerPanel, BorderLayout.NORTH);
@@ -192,6 +201,11 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                     try { chainModel.addElement(MacroAction.deserialize(p)); } catch(Exception e){}
                 }
             }
+
+            useLimitBox.setSelected(Boolean.parseBoolean(props.getProperty("useLimit", "false")));
+            limitTypeBox.setSelectedIndex(Integer.parseInt(props.getProperty("limitType", "0")));
+            limitValField.setText(props.getProperty("limitVal", "60"));
+            limitActionBox.setSelectedIndex(Integer.parseInt(props.getProperty("limitAction", "0")));
         } catch (Exception e) {}
     }
 
@@ -295,7 +309,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         
         JButton addBtn = new JButton("➕ Eylem Ekle");
         JButton remBtn = new JButton("➖ Seçileni Sil");
-        JButton clrBtn = new JButton("🗑️ Listeyi Temizle");
+        JButton clrBtn = new JButton("🗑️ Temizle");
 
         addBtn.setMaximumSize(new Dimension(150, 35));
         remBtn.setMaximumSize(new Dimension(150, 35));
@@ -339,11 +353,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         
         JComboBox<String> typeBox = new JComboBox<>(new String[]{"Fare Tıklaması", "Klavye Tuşu", "Fareyi Taşı", "Bekleme (Gecikme)"});
         
-        // Panel 0: Mouse
         JComboBox<String> mouseBox = new JComboBox<>(new String[]{"Sol Tık", "Sağ Tık", "Orta Tık", "Çift Sol Tık"});
         JPanel p0 = new JPanel(); p0.add(new JLabel("Tıklama Tipi:")); p0.add(mouseBox);
         
-        // Panel 1: Key
         JTextField keyField = new JTextField("Space", 10); keyField.setEditable(false);
         JButton keyBtn = new JButton("Tuş Ata");
         final int[] selectedActKey = {KeyEvent.VK_SPACE};
@@ -361,7 +373,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         });
         JPanel p1 = new JPanel(); p1.add(new JLabel("Basılacak Tuş:")); p1.add(keyField); p1.add(keyBtn);
         
-        // Panel 2: Move
         macroCoordLblInfo = new JLabel("X: 0 Y: 0");
         macroTempPt = new Point(0,0);
         JButton pickBtn = new JButton("Hedef Seç (Orta Tıkla)");
@@ -372,7 +383,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         });
         JPanel p2 = new JPanel(); p2.add(pickBtn); p2.add(macroCoordLblInfo);
         
-        // Panel 3: Delay
         JTextField delayField = new JTextField("500", 6);
         JPanel p3 = new JPanel(); p3.add(new JLabel("Beklenecek Süre (Milisaniye):")); p3.add(delayField);
         
@@ -389,7 +399,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 int mask = InputEvent.BUTTON1_DOWN_MASK;
                 if(mIdx==1) mask = InputEvent.BUTTON3_DOWN_MASK;
                 else if(mIdx==2) mask = InputEvent.BUTTON2_DOWN_MASK;
-                else if(mIdx==3) mask = 999; // Double
+                else if(mIdx==3) mask = 999;
                 chainModel.addElement(new MacroAction(ActionType.MOUSE_CLICK, mask, 0));
             } else if(t==1) {
                 chainModel.addElement(new MacroAction(ActionType.KEY_PRESS, selectedActKey[0], 0));
@@ -434,18 +444,40 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         hotkeyPanel.add(hotkeyBtn);
         panel.add(hotkeyPanel);
         
+        // Limiters Setup
+        JPanel limitPanel = new JPanel();
+        limitPanel.setLayout(new BoxLayout(limitPanel, BoxLayout.Y_AXIS));
+        limitPanel.setBorder(BorderFactory.createTitledBorder("Otomatik Durdurma Sınırları (Limiters)"));
+        
+        JPanel p1 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        useLimitBox = new JCheckBox("Sınırlandırıcıyı (Limiter) Aktif Et");
+        p1.add(useLimitBox);
+
+        JPanel p2 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        p2.add(new JLabel("Otomasyon "));
+        limitValField = new JTextField("60", 4);
+        p2.add(limitValField);
+        limitTypeBox = new JComboBox<>(new String[]{"Dakika Sonra", "Döngü Sonra (Adet)"});
+        p2.add(limitTypeBox);
+
+        JPanel p3 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        p3.add(new JLabel("Eylem: "));
+        limitActionBox = new JComboBox<>(new String[]{"Sadece Makroyu Durdur", "Bilgisayarı Kapat (Güvenli Kapanış)"});
+        p3.add(limitActionBox);
+
+        limitPanel.add(p1); limitPanel.add(p2); limitPanel.add(p3);
+        panel.add(limitPanel);
+
         JTextArea infoArea = new JTextArea(
             "==========================================================\n" +
             "  BİLGİLENDİRME\n" +
             "==========================================================\n\n" +
-            "1. Bu panelde ayarlanan özel Kısayol Tuşu uygulamayı başlatıp durdurur.\n" +
-            "2. HANGI SEKME AÇIKSA o sekmenin makrosu çalıştırılır.\n" +
-            "3. Hedef Konum Seçimi için 'Seç' dedikten sonra ekranın \n   istediğiniz yerine gidip farenin ORTA (SCROLL) tuşuna tıklayın.\n" +
-            "4. Ayarlarınız uygulamayı kapattığınızda otomatik Mkaydedilir."
+            "1. Klavye ve Fare sekmelerinden HANGISI AÇIKSA o çalıştırılır.\n" +
+            "2. Ayarlarınız uygulamayı kapattığınızda otomatik kaydedilir."
         );
         infoArea.setEditable(false);
         infoArea.setOpaque(false);
-        infoArea.setBorder(BorderFactory.createEmptyBorder(20, 0,0,0));
+        infoArea.setBorder(BorderFactory.createEmptyBorder(10, 0,0,0));
         panel.add(infoArea);
 
         return panel;
@@ -494,6 +526,49 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         }
     }
 
+    private boolean checkLimits(long startTime, int iterationCount) {
+        if(!useLimitBox.isSelected() || !isRunning) return true; // continue
+        
+        try {
+            int limitVal = Integer.parseInt(limitValField.getText());
+            int type = limitTypeBox.getSelectedIndex();
+            
+            if (type == 0) { // Minutes
+                long elapsed = System.currentTimeMillis() - startTime;
+                if (elapsed >= (limitVal * 60000L)) {
+                    executeLimitAction();
+                    return false;
+                }
+            } else if (type == 1) { // Iteration
+                if (iterationCount >= limitVal) {
+                    executeLimitAction();
+                    return false;
+                }
+            }
+        } catch(Exception e) {}
+        return true; 
+    }
+
+    private void executeLimitAction() {
+        isRunning = false;
+        int action = limitActionBox.getSelectedIndex();
+        if(action == 1) { // Shutdown
+            try {
+                Runtime.getRuntime().exec("shutdown -s -t 15");
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Limit aşıldı! Bilgisayar 15 saniye içinde kapatılacak!!"));
+            } catch(Exception e) {}
+        } else { // Stop
+            SwingUtilities.invokeLater(() -> {
+                Toolkit.getDefaultToolkit().beep();
+                JOptionPane.showMessageDialog(this, "Otomasyon Sınırı (Limiti) Doldu. Makro Durduruldu.");
+            });
+        }
+        SwingUtilities.invokeLater(() -> {
+            statusLabel.setText("DURUM: BEKLİYOR (LİMİT)");
+            statusLabel.setForeground(new Color(255, 90, 90));
+        });
+    }
+
     private void toggle() {
         if (isRunning) {
             isRunning = false;
@@ -523,9 +598,15 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         boolean useHumanizer = mouseHumanizerBox.isSelected();
         boolean useCoord = targetCoordBox.isSelected() && targetPoint != null;
         
+        long startTime = System.currentTimeMillis();
+        
         isRunning = true;
         workerThread = new Thread(() -> {
+            int iteration = 0;
             while (isRunning) {
+                iteration++;
+                if (!checkLimits(startTime, iteration)) break;
+                
                 try {
                     if (useCoord) {
                         robot.mouseMove(targetPoint.x, targetPoint.y);
@@ -556,9 +637,15 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         boolean useHumanizer = keyHumanizerBox.isSelected();
         final int targetKey = selectedNativeKeyCode;
 
+        long startTime = System.currentTimeMillis();
+        
         isRunning = true;
         workerThread = new Thread(() -> {
+            int iteration = 0;
             while (isRunning) {
+                iteration++;
+                if (!checkLimits(startTime, iteration)) break;
+                
                 try {
                     robot.keyPress(targetKey);
                     robot.delay(20 + random.nextInt(30)); 
@@ -580,13 +667,19 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         }
 
         boolean useHumanizer = chainHumanizerBox.isSelected();
+        long startTime = System.currentTimeMillis();
+        
         isRunning = true;
         workerThread = new Thread(() -> {
+            int iteration = 0;
             while (isRunning) {
+                iteration++;
+                if (!checkLimits(startTime, iteration)) break;
+                
                 for (int i = 0; i < chainModel.getSize() && isRunning; i++) {
                     MacroAction action = chainModel.get(i);
                     final int idx = i;
-                    SwingUtilities.invokeLater(() -> chainList.setSelectedIndex(idx)); // Highlight execution
+                    SwingUtilities.invokeLater(() -> chainList.setSelectedIndex(idx)); 
 
                     try {
                         switch (action.type) {
@@ -613,7 +706,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                                 break;
                         }
                         
-                        // Default micro sleep to prevent CPU exhaustion
                         Thread.sleep(5);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
@@ -621,7 +713,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                     }
                 }
             }
-            SwingUtilities.invokeLater(() -> chainList.clearSelection());
+            if (!isRunning) SwingUtilities.invokeLater(() -> chainList.clearSelection());
         });
         workerThread.start();
     }

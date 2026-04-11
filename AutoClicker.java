@@ -19,20 +19,41 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class AutoClicker extends JFrame implements NativeKeyListener, NativeMouseListener {
-    // Config
+
+    enum ActionType { MOUSE_CLICK, KEY_PRESS, MOUSE_MOVE, DELAY }
+    
+    static class MacroAction {
+        ActionType type;
+        int p1, p2;
+        public MacroAction(ActionType type, int p1, int p2) { this.type = type; this.p1 = p1; this.p2 = p2; }
+        public String toString() {
+            switch(type) {
+                case MOUSE_CLICK: return " Fare Tıklaması: " + (p1==InputEvent.BUTTON1_DOWN_MASK ? "Sol Tık" : p1==InputEvent.BUTTON3_DOWN_MASK ? "Sağ Tık" : p1==999 ? "Çift Sol Tık" : "Orta Tık");
+                case KEY_PRESS: return " Klavye Harfi: " + KeyEvent.getKeyText(p1);
+                case MOUSE_MOVE: return " Fareyi Işınla: X=" + p1 + ", Y=" + p2;
+                case DELAY: return " Bekle (Gecikme): " + p1 + " ms";
+                default: return "Bilinmeyen";
+            }
+        }
+        public String serialize() { return type.name()+":"+p1+":"+p2; }
+        public static MacroAction deserialize(String s) {
+            String[] parts = s.split(":");
+            return new MacroAction(ActionType.valueOf(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+        }
+    }
+
     private final String CONFIG_FILE = "config.properties";
     private Properties props = new Properties();
 
-    private int triggerKey = NativeKeyEvent.VC_F6; // Default F6
+    private int triggerKey = NativeKeyEvent.VC_F6; 
     private boolean listeningForHotkey = false;
     
-    // Core states
     private boolean isRunning = false;
     private Thread workerThread;
     private Robot robot;
     private Random random = new Random();
 
-    // UI Variables
+    // UI
     private JLabel statusLabel;
     private JButton hotkeyBtn;
     
@@ -41,12 +62,10 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private JSlider mouseCpsSlider;
     private JTextField mouseCpsField;
     private JCheckBox mouseHumanizerBox;
-    
-    // Coordinate targeted clicking
     private JCheckBox targetCoordBox;
     private JLabel coordLabel;
     private Point targetPoint = null;
-    private boolean listeningForCoord = false;
+    private boolean listeningForCoordParams = false;
 
     // Keyboard specific
     private JTextField keyTargetField;
@@ -54,6 +73,15 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private JTextField keyCpsField;
     private JCheckBox keyHumanizerBox;
     private int selectedNativeKeyCode = KeyEvent.VK_SPACE;
+
+    // Chain Macro Specific
+    private DefaultListModel<MacroAction> chainModel = new DefaultListModel<>();
+    private JList<MacroAction> chainList;
+    private JCheckBox chainHumanizerBox;
+    
+    private boolean listeningForMacroCoord = false;
+    private JLabel macroCoordLblInfo;
+    private Point macroTempPt;
 
     public AutoClicker() {
         try {
@@ -67,8 +95,8 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             SwingUtilities.updateComponentTreeUI(this);
         } catch(Exception e) { }
 
-        setTitle("AutoClicker Ultimate");
-        setSize(520, 500);
+        setTitle("AutoClicker Ultimate v3");
+        setSize(560, 520);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setAlwaysOnTop(true);
@@ -98,16 +126,22 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         try (FileOutputStream fos = new FileOutputStream(CONFIG_FILE)) {
             props.setProperty("hotkey", String.valueOf(triggerKey));
             
-            // Mouse
             props.setProperty("mouseCps", String.valueOf(mouseCpsSlider.getValue()));
             props.setProperty("mouseBtn", String.valueOf(mouseBtnBox.getSelectedIndex()));
             props.setProperty("mouseHumanizer", String.valueOf(mouseHumanizerBox.isSelected()));
             
-            // Keyboard
             props.setProperty("keyCps", String.valueOf(keyCpsSlider.getValue()));
             props.setProperty("keyTargetCode", String.valueOf(selectedNativeKeyCode));
             props.setProperty("keyHumanizer", String.valueOf(keyHumanizerBox.isSelected()));
             
+            StringBuilder sb = new StringBuilder();
+            for(int i=0; i<chainModel.getSize(); i++){
+                sb.append(chainModel.get(i).serialize());
+                if(i < chainModel.getSize()-1) sb.append(";");
+            }
+            props.setProperty("chainActions", sb.toString());
+            props.setProperty("chainHumanizer", String.valueOf(chainHumanizerBox.isSelected()));
+
             props.store(fos, "AutoClicker Configuration");
         } catch (Exception e) {
             e.printStackTrace();
@@ -117,7 +151,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private void initUI() {
         setLayout(new BorderLayout());
 
-        // Header Panel
         JPanel headerPanel = new JPanel();
         headerPanel.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
         statusLabel = new JLabel("DURUM: BEKLİYOR", SwingConstants.CENTER);
@@ -125,11 +158,11 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         statusLabel.setForeground(new Color(255, 90, 90));
         headerPanel.add(statusLabel);
 
-        // Tabbed Pane
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         tabbedPane.addTab("🖱️ Fare Makrosu", buildMousePanel());
         tabbedPane.addTab("⌨️ Klavye Makrosu", buildKeyboardPanel());
+        tabbedPane.addTab("🔗 Kombinasyon (Zincir)", buildChainPanel());
         tabbedPane.addTab("⚙️ Ayarlar", buildSettingsPanel());
 
         add(headerPanel, BorderLayout.NORTH);
@@ -150,6 +183,15 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             keyHumanizerBox.setSelected(Boolean.parseBoolean(props.getProperty("keyHumanizer", "false")));
             
             hotkeyBtn.setText(NativeKeyEvent.getKeyText(triggerKey));
+
+            chainHumanizerBox.setSelected(Boolean.parseBoolean(props.getProperty("chainHumanizer", "false")));
+            String chainStr = props.getProperty("chainActions", "");
+            if(!chainStr.isEmpty()) {
+                String[] parts = chainStr.split(";");
+                for(String p : parts) {
+                    try { chainModel.addElement(MacroAction.deserialize(p)); } catch(Exception e){}
+                }
+            }
         } catch (Exception e) {}
     }
 
@@ -158,7 +200,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
 
-        // Click Type
         JPanel typePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         typePanel.add(new JLabel("Tıklama Tipi: "));
         String[] types = {"Sol Tık", "Sağ Tık", "Orta Tık", "Çift Sol Tık"};
@@ -166,7 +207,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         typePanel.add(mouseBtnBox);
         panel.add(typePanel);
 
-        // Targeted Clicking
         JPanel targetPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         targetCoordBox = new JCheckBox("Sabit Konuma Tıkla");
         JButton pickCoordBtn = new JButton("Konum Seç");
@@ -174,7 +214,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         
         pickCoordBtn.addActionListener(e -> {
             pickCoordBtn.setText("Şimdi Seç (Orta Tıkla)");
-            listeningForCoord = true;
+            listeningForCoordParams = true;
         });
 
         targetPanel.add(targetCoordBox);
@@ -182,13 +222,11 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         targetPanel.add(coordLabel);
         panel.add(targetPanel);
 
-        // Anti-Ban
         JPanel humanizerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         mouseHumanizerBox = new JCheckBox("İnsan Modu (Rastgelemsi Gecikme - Ban Koruması)");
         humanizerPanel.add(mouseHumanizerBox);
         panel.add(humanizerPanel);
 
-        // CPS Slider
         JPanel cpsPanel = createCpsPanel("Fare Hızı (CPS):", "10", slider -> {
             mouseCpsSlider = slider;
         }, field -> {
@@ -204,7 +242,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
 
-        // Key to press
         JPanel keyPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         keyPanel.add(new JLabel("Aralıklarla Basılacak Tuş:"));
         keyTargetField = new JTextField("Space", 10);
@@ -212,7 +249,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         JButton assignKeyBtn = new JButton("Tuş Ata");
         
         assignKeyBtn.addActionListener(e -> {
-            assignKeyBtn.setText("Bir tuşa basın...");
+            assignKeyBtn.setText("Basın...");
             keyTargetField.addKeyListener(new KeyAdapter() {
                 @Override
                 public void keyPressed(KeyEvent ev) {
@@ -229,13 +266,11 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         keyPanel.add(assignKeyBtn);
         panel.add(keyPanel);
 
-        // Anti-Ban
         JPanel humanizerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         keyHumanizerBox = new JCheckBox("İnsan Modu (Tuşlara rastgele gecikmeyle basılır)");
         humanizerPanel.add(keyHumanizerBox);
         panel.add(humanizerPanel);
 
-        // CPS Slider
         JPanel cpsPanel = createCpsPanel("Klavye Hızı (Saniyede Basış):", "5", slider -> {
             keyCpsSlider = slider;
         }, field -> {
@@ -244,6 +279,140 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         panel.add(cpsPanel);
 
         return panel;
+    }
+
+    private JPanel buildChainPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+
+        chainList = new JList<>(chainModel);
+        chainList.setFont(new Font("Consolas", Font.PLAIN, 14));
+        JScrollPane scrollPane = new JScrollPane(chainList);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel rightPanel = new JPanel();
+        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+        
+        JButton addBtn = new JButton("➕ Eylem Ekle");
+        JButton remBtn = new JButton("➖ Seçileni Sil");
+        JButton clrBtn = new JButton("🗑️ Listeyi Temizle");
+
+        addBtn.setMaximumSize(new Dimension(150, 35));
+        remBtn.setMaximumSize(new Dimension(150, 35));
+        clrBtn.setMaximumSize(new Dimension(150, 35));
+
+        addBtn.addActionListener(e -> openAddActionDialog());
+        remBtn.addActionListener(e -> {
+            int idx = chainList.getSelectedIndex();
+            if(idx != -1) chainModel.remove(idx);
+        });
+        clrBtn.addActionListener(e -> chainModel.clear());
+
+        rightPanel.add(addBtn);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        rightPanel.add(remBtn);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        rightPanel.add(clrBtn);
+        
+        chainHumanizerBox = new JCheckBox("Anti-Ban");
+        chainHumanizerBox.setToolTipText("Gecikmelerin üstüne %15 rastgele sapma katar.");
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        rightPanel.add(chainHumanizerBox);
+
+        panel.add(rightPanel, BorderLayout.EAST);
+        
+        JLabel hintLabel = new JLabel("İpucu: Bu sekme açıkken F6'ya bastığınızda liste sonsuz döngüde oynatılır.");
+        hintLabel.setForeground(Color.GRAY);
+        panel.add(hintLabel, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private void openAddActionDialog() {
+        JDialog dialog = new JDialog(this, "Yeni Eylem Ekle", true);
+        dialog.setSize(400, 260);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel configPanel = new JPanel(new CardLayout());
+        configPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        
+        JComboBox<String> typeBox = new JComboBox<>(new String[]{"Fare Tıklaması", "Klavye Tuşu", "Fareyi Taşı", "Bekleme (Gecikme)"});
+        
+        // Panel 0: Mouse
+        JComboBox<String> mouseBox = new JComboBox<>(new String[]{"Sol Tık", "Sağ Tık", "Orta Tık", "Çift Sol Tık"});
+        JPanel p0 = new JPanel(); p0.add(new JLabel("Tıklama Tipi:")); p0.add(mouseBox);
+        
+        // Panel 1: Key
+        JTextField keyField = new JTextField("Space", 10); keyField.setEditable(false);
+        JButton keyBtn = new JButton("Tuş Ata");
+        final int[] selectedActKey = {KeyEvent.VK_SPACE};
+        keyBtn.addActionListener(e -> {
+            keyBtn.setText("Basın...");
+            keyField.addKeyListener(new KeyAdapter() {
+                public void keyPressed(KeyEvent ev) {
+                    selectedActKey[0] = ev.getKeyCode();
+                    keyField.setText(KeyEvent.getKeyText(selectedActKey[0]));
+                    keyField.removeKeyListener(this);
+                    keyBtn.setText("Tuş Ata");
+                }
+            });
+            keyField.requestFocus();
+        });
+        JPanel p1 = new JPanel(); p1.add(new JLabel("Basılacak Tuş:")); p1.add(keyField); p1.add(keyBtn);
+        
+        // Panel 2: Move
+        macroCoordLblInfo = new JLabel("X: 0 Y: 0");
+        macroTempPt = new Point(0,0);
+        JButton pickBtn = new JButton("Hedef Seç (Orta Tıkla)");
+        pickBtn.addActionListener(e -> {
+             listeningForMacroCoord = true;
+             pickBtn.setText("Bekleniyor...");
+             pickBtn.setForeground(Color.RED);
+        });
+        JPanel p2 = new JPanel(); p2.add(pickBtn); p2.add(macroCoordLblInfo);
+        
+        // Panel 3: Delay
+        JTextField delayField = new JTextField("500", 6);
+        JPanel p3 = new JPanel(); p3.add(new JLabel("Beklenecek Süre (Milisaniye):")); p3.add(delayField);
+        
+        configPanel.add(p0, "0"); configPanel.add(p1, "1"); configPanel.add(p2, "2"); configPanel.add(p3, "3");
+        
+        typeBox.addActionListener(e -> ((CardLayout)configPanel.getLayout()).show(configPanel, String.valueOf(typeBox.getSelectedIndex())));
+        
+        JButton addBtn = new JButton("✔ Listeye Ekle");
+        addBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        addBtn.addActionListener(e -> {
+            int t = typeBox.getSelectedIndex();
+            if(t==0) {
+                int mIdx = mouseBox.getSelectedIndex();
+                int mask = InputEvent.BUTTON1_DOWN_MASK;
+                if(mIdx==1) mask = InputEvent.BUTTON3_DOWN_MASK;
+                else if(mIdx==2) mask = InputEvent.BUTTON2_DOWN_MASK;
+                else if(mIdx==3) mask = 999; // Double
+                chainModel.addElement(new MacroAction(ActionType.MOUSE_CLICK, mask, 0));
+            } else if(t==1) {
+                chainModel.addElement(new MacroAction(ActionType.KEY_PRESS, selectedActKey[0], 0));
+            } else if(t==2) {
+                chainModel.addElement(new MacroAction(ActionType.MOUSE_MOVE, macroTempPt.x, macroTempPt.y));
+            } else if(t==3) {
+                try { 
+                    chainModel.addElement(new MacroAction(ActionType.DELAY, Integer.parseInt(delayField.getText()), 0)); 
+                } catch(Exception ex) {}
+            }
+            dialog.dispose();
+        });
+
+        JPanel top = new JPanel(new FlowLayout(FlowLayout.CENTER)); 
+        top.add(new JLabel("Oluşturulacak Eylem Türü:")); top.add(typeBox);
+        dialog.add(top, BorderLayout.NORTH);
+        dialog.add(configPanel, BorderLayout.CENTER);
+        
+        JPanel bot = new JPanel(); bot.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        bot.add(addBtn);
+        dialog.add(bot, BorderLayout.SOUTH);
+        
+        dialog.setVisible(true);
     }
 
     private JPanel buildSettingsPanel() {
@@ -270,9 +439,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             "  BİLGİLENDİRME\n" +
             "==========================================================\n\n" +
             "1. Bu panelde ayarlanan özel Kısayol Tuşu uygulamayı başlatıp durdurur.\n" +
-            "2. Klavye ve Fare sekmelerinden HANGISI AÇIKSA o çalıştırılır.\n" +
-            "3. Konum Seçimi için 'Konum Seç' dedikten sonra ekranın istediğiniz \n   bir yerine gidip farenin Orta Titreşim (Scroll) tuşuna tıklayın.\n" +
-            "4. Ayarlarınız siz uygulamayı kapattığınızda otomatik kaydedilir."
+            "2. HANGI SEKME AÇIKSA o sekmenin makrosu çalıştırılır.\n" +
+            "3. Hedef Konum Seçimi için 'Seç' dedikten sonra ekranın \n   istediğiniz yerine gidip farenin ORTA (SCROLL) tuşuna tıklayın.\n" +
+            "4. Ayarlarınız uygulamayı kapattığınızda otomatik Mkaydedilir."
         );
         infoArea.setEditable(false);
         infoArea.setOpaque(false);
@@ -336,8 +505,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             
             if (selectedTab == 0) startMouseMacro();
             else if (selectedTab == 1) startKeyMacro();
+            else if (selectedTab == 2) startChainMacro();
             else {
-                JOptionPane.showMessageDialog(this, "Lütfen Fare veya Klavye sekmesine geçip kısayolu kullanın.");
+                JOptionPane.showMessageDialog(this, "Lütfen Fare, Klavye veya Zincir sekmesine geçip kısayolu kullanın.");
                 return;
             }
 
@@ -362,13 +532,10 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                     }
                     
                     switch (mode) {
-                        case 0: // Left
-                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK); break;
-                        case 1: // Right
-                            doMouseClick(InputEvent.BUTTON3_DOWN_MASK); break;
-                        case 2: // Middle
-                            doMouseClick(InputEvent.BUTTON2_DOWN_MASK); break;
-                        case 3: // Double Left
+                        case 0: doMouseClick(InputEvent.BUTTON1_DOWN_MASK); break;
+                        case 1: doMouseClick(InputEvent.BUTTON3_DOWN_MASK); break;
+                        case 2: doMouseClick(InputEvent.BUTTON2_DOWN_MASK); break;
+                        case 3: 
                             doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
                             robot.delay(40);
                             doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
@@ -383,11 +550,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         workerThread.start();
     }
     
-    private void doMouseClick(int mask) {
-        robot.mousePress(mask);
-        robot.mouseRelease(mask);
-    }
-
     private void startKeyMacro() {
         int cps = keyCpsSlider.getValue();
         int baseDelay = Math.max(1, 1000 / cps);
@@ -410,9 +572,68 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         workerThread.start();
     }
 
+    private void startChainMacro() {
+        if (chainModel.isEmpty()) {
+            isRunning = false;
+            SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Önce listeye bir şeyler ekleyin!"));
+            return;
+        }
+
+        boolean useHumanizer = chainHumanizerBox.isSelected();
+        isRunning = true;
+        workerThread = new Thread(() -> {
+            while (isRunning) {
+                for (int i = 0; i < chainModel.getSize() && isRunning; i++) {
+                    MacroAction action = chainModel.get(i);
+                    final int idx = i;
+                    SwingUtilities.invokeLater(() -> chainList.setSelectedIndex(idx)); // Highlight execution
+
+                    try {
+                        switch (action.type) {
+                            case MOUSE_CLICK:
+                                if (action.p1 == 999) {
+                                    doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
+                                    robot.delay(40);
+                                    doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
+                                } else {
+                                    doMouseClick(action.p1);
+                                }
+                                break;
+                            case KEY_PRESS:
+                                robot.keyPress(action.p1);
+                                robot.delay(20 + random.nextInt(30));
+                                robot.keyRelease(action.p1);
+                                break;
+                            case MOUSE_MOVE:
+                                robot.mouseMove(action.p1, action.p2);
+                                break;
+                            case DELAY:
+                                int sleepTime = getHumanizedDelay(action.p1, useHumanizer);
+                                Thread.sleep(sleepTime);
+                                break;
+                        }
+                        
+                        // Default micro sleep to prevent CPU exhaustion
+                        Thread.sleep(5);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+            SwingUtilities.invokeLater(() -> chainList.clearSelection());
+        });
+        workerThread.start();
+    }
+
+    private void doMouseClick(int mask) {
+        robot.mousePress(mask);
+        robot.mouseRelease(mask);
+    }
+
     private int getHumanizedDelay(int baseDelay, boolean useHumanizer) {
-        if (!useHumanizer) return Math.max(1, baseDelay);
-        int variance = (int)(baseDelay * 0.20);
+        if (!useHumanizer || baseDelay < 5) return Math.max(1, baseDelay);
+        int variance = (int)(baseDelay * 0.15); // +- 15%
         if (variance == 0) variance = 1;
         int offset = random.nextInt(variance * 2) - variance;
         return Math.max(1, baseDelay + offset);
@@ -431,7 +652,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             return;
         }
 
-        if (ev.getKeyCode() == triggerKey && !listeningForCoord) {
+        if (ev.getKeyCode() == triggerKey && !listeningForCoordParams && !listeningForMacroCoord) {
             SwingUtilities.invokeLater(this::toggle);
         }
     }
@@ -441,17 +662,27 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     @Override
     public void nativeKeyTyped(NativeKeyEvent e) {}
 
-    // Mouse listener through JNativeHook for setting target coord
     @Override
     public void nativeMouseClicked(NativeMouseEvent e) {
-        if (listeningForCoord && e.getButton() == NativeMouseEvent.BUTTON2) { // Changed to Middle Click (Button 2) for safety
-            listeningForCoord = false;
+        if (listeningForCoordParams && e.getButton() == NativeMouseEvent.BUTTON2) { 
+            listeningForCoordParams = false;
             targetPoint = new Point(e.getX(), e.getY());
             SwingUtilities.invokeLater(() -> {
                 coordLabel.setText("(X: " + targetPoint.x + ", Y: " + targetPoint.y + ")");
                 JButton btn = (JButton)((JPanel)targetCoordBox.getParent()).getComponent(1);
                 btn.setText("Konum Yeniden Seç");
                 targetCoordBox.setSelected(true);
+            });
+        }
+        if (listeningForMacroCoord && e.getButton() == NativeMouseEvent.BUTTON2) {
+            listeningForMacroCoord = false;
+            macroTempPt = new Point(e.getX(), e.getY());
+            SwingUtilities.invokeLater(() -> {
+                if(macroCoordLblInfo != null) {
+                    macroCoordLblInfo.setText("X: " + macroTempPt.x + " Y: " + macroTempPt.y);
+                    macroCoordLblInfo.getParent().getComponent(0).setForeground(Color.GREEN);
+                    ((JButton)macroCoordLblInfo.getParent().getComponent(0)).setText("Kilitlendi ✔");
+                }
             });
         }
     }

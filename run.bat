@@ -25,5 +25,5 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 echo [INFO] AutoClicker baslatiliyor...
-start javaw -cp ".;lib\jnativehook.jar;lib\flatlaf.jar" AutoClicker
+start javaw -Dfile.encoding=UTF-8 -cp ".;lib\jnativehook.jar;lib\flatlaf.jar" AutoClicker
 exit

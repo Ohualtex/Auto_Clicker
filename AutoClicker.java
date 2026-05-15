@@ -28,11 +28,11 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             d.put("st_run", new String[]{"DURUM: CALISIYOR", "STATUS: RUNNING", "STATUS: LÄUFT", "STATUT: EN COURS", "STATO: IN ESECUZIONE", "СТАТУС: РАБОТАЕТ"});
             d.put("st_lim", new String[]{"DURUM: LIMIT YENDI", "STATUS: LIMIT HIT", "STATUS: LIMIT ERREICHT", "STATUT: LIMITE", "STATO: LIMITE RAGGIUNTO", "СТАТУС: ЛИМИТ"});
             
-            d.put("t_mouse", new String[]{"[ Fare ]", "[ Mouse ]", "[ Maus ]", "[ Souris ]", "[ Mouse ]", "[ Мышь ]"});
-            d.put("t_key", new String[]{"[ Klavye ]", "[ Keyboard ]", "[ Tastatur ]", "[ Clavier ]", "[ Tastiera ]", "[ Клавиатура ]"});
-            d.put("t_chain", new String[]{"[ Zincir ]", "[ Chain ]", "[ Kette ]", "[ Chaîne ]", "[ Catena ]", "[ Цепь ]"});
-            d.put("t_px", new String[]{"[ Piksel ]", "[ Pixel ]", "[ Pixel ]", "[ Pixel ]", "[ Pixel ]", "[ Пиксель ]"});
-            d.put("t_set", new String[]{"[ Ayarlar ]", "[ Settings ]", "[ Einstellungen ]", "[ Paramètres ]", "[ Impostazioni ]", "[ Настройки ]"});
+            d.put("t_mouse", new String[]{"Fare", "Mouse", "Maus", "Souris", "Mouse", "Мышь"});
+            d.put("t_key", new String[]{"Klavye", "Keyboard", "Tastatur", "Clavier", "Tastiera", "Клавиатура"});
+            d.put("t_chain", new String[]{"Zincir", "Chain", "Kette", "Chaîne", "Catena", "Цепь"});
+            d.put("t_px", new String[]{"Piksel", "Pixel", "Pixel", "Pixel", "Pixel", "Пиксель"});
+            d.put("t_set", new String[]{"Ayarlar", "Settings", "Einstellungen", "Paramètres", "Impostazioni", "Настройки"});
             
             d.put("c_type", new String[]{"Tiklama Tipi: ", "Click Type: ", "Klick-Typ: ", "Type de clic: ", "Tipo di clic: ", "Тип клика: "});
             d.put("l_click", new String[]{"Sol Tik", "Left Click", "Linksklick", "Clic Gauche", "Clic Sinistro", "Левый Клик"});
@@ -96,6 +96,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             d.put("info_hum", new String[]{"Anti-Ban: Robotik tiklamalari saptirmak icin gecikmelere minik sapmalar ekler.", "Anti-Ban: Adds random fluctuations to delays to simulate human behavior and evade detection.", "Anti-Ban: Fügt den Verzögerungen zufällige Schwankungen hinzu.", "Anti-Ban: Ajoute des fluctuations aléatoires aux délais.", "Anti-Ban: Aggiunge fluttuazioni casuali ai ritardi.", "Анти-Бан: Добавляет случайные колебания к задержкам."});
             d.put("info_lim", new String[]{"Otomasyonu belirli bir sure sonra kapatir.", "Stops the automation automatically after a set time or cycle count. Ideal for AFK macros.", "Stoppt die Automatisierung automatisch nach einer Weile.", "Arrête automatiquement l'automatisation.", "Ferma l'automazione in base a limiti.", "Останавливает автоматизацию при достижении лимита."});
             d.put("info_px", new String[]{"Renk Toleransi: Ufak golge farkliliklarinin renk algisini bozmasini engeller.", "Color Tolerance: Prevents minor in-game shading/lighting shifts from ruining detection.", "Farbtoleranz: Verhindert kleine Schattenfehler.", "Tolérance: Empêche les petits changements de lumière...", "Tolleranza: Evita che l'illuminazione rompa l'algoritmo.", "Допуск: Игнорирует изменения освещения."});
+            d.put("info_cps", new String[]{"Saniyedeki tiklama hizini belirler (Click Per Second).", "Sets the click speed per second (CPS).", "Legt die Klicks pro Sekunde fest.", "Définit la vitesse de clic (CPS).", "Imposta i clic al secondo (CPS).", "Устанавливает кликов в секунду (CPS)."});
+            d.put("info_px_cond", new String[]{"Eslestiginde: Renk gorundugunde tepki verir.\nDegistiginde: Renk kayboldugunda tepki verir.", "Matches: Reacts when color appears.\nChanges: Reacts when color disappears.", "Stimmt überein: Reagiert, wenn die Farbe erscheint.", "Correspond: Agit quand la couleur apparait.", "Corrisponde: Agisce quando il colore appare.", "Совпадает: Реагирует на появление цвета."});
+            d.put("info_px_rate", new String[]{"Tarama Hizi: Ekranin ne siklikla kontrol edilecegini belirler (Milisaniye).", "Scan Rate: How often to check the screen (Milliseconds).", "Scanrate: Wie oft der Bildschirm überprüft wird (ms).", "Taux de scan: Fréquence de vérification (ms).", "Velocità scan: Frequenza di controllo schermo (ms).", "Скорость: Частота проверки экрана (мс)."});
         }
         static String get(String key) { return d.containsKey(key) ? d.get(key)[L] : key; }
     }
@@ -239,8 +242,57 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         repaint();
     }
 
+    // Native 2D Icons
+    static class MouseIcon implements Icon {
+        public int getIconWidth() { return 16; } public int getIconHeight() { return 16; }
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D)g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(c.getForeground()); g2.drawRoundRect(x+3, y+1, 10, 14, 6, 6); g2.drawLine(x+8, y+1, x+8, y+5); g2.drawOval(x+7, y+3, 2, 4); g2.dispose();
+        }
+    }
+    static class KeyIcon implements Icon {
+        public int getIconWidth() { return 16; } public int getIconHeight() { return 16; }
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D)g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(c.getForeground()); g2.drawRoundRect(x+1, y+4, 14, 8, 2, 2);
+            g2.fillRect(x+3, y+6, 2, 2); g2.fillRect(x+7, y+6, 2, 2); g2.fillRect(x+11, y+6, 2, 2); g2.fillRect(x+5, y+9, 6, 2); g2.dispose();
+        }
+    }
+    static class ChainIcon implements Icon {
+        public int getIconWidth() { return 16; } public int getIconHeight() { return 16; }
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D)g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setStroke(new BasicStroke(2)); g2.setColor(c.getForeground());
+            g2.drawOval(x+1, y+5, 8, 6); g2.drawOval(x+7, y+5, 8, 6); g2.dispose();
+        }
+    }
+    static class PixelIcon implements Icon {
+        public int getIconWidth() { return 16; } public int getIconHeight() { return 16; }
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D)g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(c.getForeground()); g2.drawOval(x+2, y+2, 12, 12);
+            g2.drawLine(x+8, y+0, x+8, y+4); g2.drawLine(x+8, y+12, x+8, y+16);
+            g2.drawLine(x+0, y+8, x+4, y+8); g2.drawLine(x+12, y+8, x+16, y+8); g2.fillOval(x+6, y+6, 4, 4); g2.dispose();
+        }
+    }
+    static class GearIcon implements Icon {
+        public int getIconWidth() { return 16; } public int getIconHeight() { return 16; }
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D)g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(c.getForeground()); g2.setStroke(new BasicStroke(2)); g2.drawOval(x+4, y+4, 8, 8);
+            for(int i=0; i<8; i++) { double a = i * Math.PI/4; g2.drawLine(x+8+(int)(4*Math.cos(a)), y+8+(int)(4*Math.sin(a)), x+8+(int)(7*Math.cos(a)), y+8+(int)(7*Math.sin(a))); } g2.dispose();
+        }
+    }
+    static class InfoIcon implements Icon {
+        public int getIconWidth() { return 14; } public int getIconHeight() { return 14; }
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            Graphics2D g2 = (Graphics2D)g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(c.getForeground()); g2.drawOval(x+1, y+1, 12, 12); g2.fillRect(x+6, y+4, 2, 2); g2.fillRect(x+6, y+7, 2, 4); g2.dispose();
+        }
+    }
+
     private JButton createInfoButton(String tooltipKey) {
-        JButton btn = new JButton("[ ? ]");
+        JButton btn = new JButton(new InfoIcon());
         btn.setMargin(new Insets(0,0,0,0));
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
@@ -252,7 +304,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private void applyColorsRecursively(Component c, Color color) {
-        if (c == null) return;
+        if (c == null || c == statusLabel) return;
         c.setForeground(color);
         if (c instanceof Container) {
             for (Component child : ((Container) c).getComponents()) {
@@ -391,13 +443,13 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        tabbedPane.addTab(Lang.get("t_mouse"), buildMousePanel());
-        tabbedPane.addTab(Lang.get("t_key"), buildKeyboardPanel());
-        tabbedPane.addTab(Lang.get("t_chain"), buildChainPanel());
-        tabbedPane.addTab(Lang.get("t_px"), buildPixelPanel());
+        tabbedPane.addTab(Lang.get("t_mouse"), new MouseIcon(), buildMousePanel());
+        tabbedPane.addTab(Lang.get("t_key"), new KeyIcon(), buildKeyboardPanel());
+        tabbedPane.addTab(Lang.get("t_chain"), new ChainIcon(), buildChainPanel());
+        tabbedPane.addTab(Lang.get("t_px"), new PixelIcon(), buildPixelPanel());
         JScrollPane setScroll = new JScrollPane(buildSettingsPanel());
         setScroll.setBorder(null);
-        tabbedPane.addTab(Lang.get("t_set"), setScroll);
+        tabbedPane.addTab(Lang.get("t_set"), new GearIcon(), setScroll);
 
         add(headerPanel, BorderLayout.NORTH);
         add(tabbedPane, BorderLayout.CENTER);
@@ -492,7 +544,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         humanizerPanel.add(createInfoButton("info_hum"));
         panel.add(humanizerPanel);
 
-        JPanel cpsPanel = createCpsPanel(Lang.get("cps"), "10", 100, slider -> mouseCpsSlider = slider, field -> mouseCpsField = field);
+        JPanel cpsPanel = createCpsPanel(Lang.get("cps"), "10", 100, "info_cps", slider -> mouseCpsSlider = slider, field -> mouseCpsField = field);
         panel.add(cpsPanel);
 
         return panel;
@@ -533,7 +585,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         humanizerPanel.add(createInfoButton("info_hum"));
         panel.add(humanizerPanel);
 
-        JPanel cpsPanel = createCpsPanel(Lang.get("key_cps"), "5", 100, slider -> keyCpsSlider = slider, field -> keyCpsField = field);
+        JPanel cpsPanel = createCpsPanel(Lang.get("key_cps"), "5", 100, "info_cps", slider -> keyCpsSlider = slider, field -> keyCpsField = field);
         panel.add(cpsPanel);
 
         return panel;
@@ -614,9 +666,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         pCond.setBorder(BorderFactory.createTitledBorder(Lang.get("px_2")));
         pxConditionBox = new JComboBox<>(new String[]{Lang.get("px_cond1"), Lang.get("px_cond2")});
         
-        JPanel pTol = createCpsPanel(Lang.get("px_tol"), "5", 100, slider -> pxToleranceSlider = slider, field -> pxToleranceField = field);
+        JPanel pTol = createCpsPanel(Lang.get("px_tol"), "5", 100, "info_px", slider -> pxToleranceSlider = slider, field -> pxToleranceField = field);
         JPanel innerCond = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        innerCond.add(pxConditionBox); innerCond.add(createInfoButton("info_px"));
+        innerCond.add(pxConditionBox); innerCond.add(createInfoButton("info_px_cond"));
         pCond.add(innerCond);
         panel.add(pCond);
         panel.add(pTol);
@@ -655,7 +707,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         
         panel.add(pAct);
 
-        JPanel pRate = createCpsPanel(Lang.get("px_rate"), "100", 2000, slider -> {
+        JPanel pRate = createCpsPanel(Lang.get("px_rate"), "100", 2000, "info_px_rate", slider -> {
             pxRateSlider = slider;
             pxRateSlider.setMinimum(10);
         }, field -> {
@@ -848,8 +900,8 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             if(!customColorPreview.getBackground().equals(Color.WHITE)) {
                 fColor = customColorPreview.getBackground(); 
             }
-            applyThemeAndFont(isDark, fSize, fColor);
-            saveConfig(); 
+            saveConfig();
+            rebuildUI();
         });
         pApply.add(applyStyleBtn);
         stylePanel.add(pApply);
@@ -860,7 +912,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         return panel;
     }
 
-    private JPanel createCpsPanel(String title, String defaultVal, int max, java.util.function.Consumer<JSlider> setSlider, java.util.function.Consumer<JTextField> setField) {
+    private JPanel createCpsPanel(String title, String defaultVal, int max, String infoKey, java.util.function.Consumer<JSlider> setSlider, java.util.function.Consumer<JTextField> setField) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createTitledBorder(title));
@@ -884,6 +936,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         
         inputPanel.add(slider);
         inputPanel.add(field);
+        if (infoKey != null) {
+            inputPanel.add(createInfoButton(infoKey));
+        }
         panel.add(inputPanel);
         return panel;
     }

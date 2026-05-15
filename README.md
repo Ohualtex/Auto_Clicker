@@ -1,32 +1,32 @@
-# 🖱️ AutoClicker Ultimate
+# 🖱️ AutoClicker Ultimate (V5 Suite)
 
-Sürekli tıklamaktan usandınız mı? Bunu deneyin! ^-^ 
+Sürekli tıklamaktan veya aynı klavye kombinasyonlarını girmekten usandınız mı? O zaman oyunları kurallarına, hayatı akışına göre oynatan profesyonel araca hoş geldiniz! ^-^ 
 
-Java ile geliştirilmiş, **FlatLaf** karanlık (dark) arayüz tasarımı ile son derece modern, arka plan klavye dinleme yapısına (JNativeHook) sahip gelişmiş bir otomatik fare ve klavye makro projesidir.
+Java tabanlı `AutoClicker Ultimate v5.3`, eski nesil basit tıklayıcıların ötesine geçerek; **Piksel (Renk) Analizi yapabilen Zeka**, **Zincir Makro (Combo) Dizilimleri**, **Oto-Bilgisayar Kapatıcı** gibi ileri teknoloji sistemleri barındıran tam donanımlı profesyonel bir otomasyon yazılımıdır.
 
-## 🌟 Öne Çıkan Özellikler
+## 🌟 Öne Çıkan Özellikler (Ultimate Sürüm)
 
-- **🌑 FlatLaf Dark Mode Arayüz:** Modern, koyu temalı ve göz yormayan, 3 farklı sekmeye bölünmüş ("Fare Makrosu", "Klavye Makrosu", "Ayarlar") profesyonel tasarım.
-- **🔠 Klavye Makrosu (Auto-Typer):** Fare makrosuna ek olarak sadece bir fare tıklayıcısı değil; dilediğiniz bir harfe (Örn: Boşluk, E, Q) saniyede belirlediğiniz defa otomatik basabilen bir klavye otomatıdır.
-- **🛡️ İnsan Modu (Humanizer / Anti-Ban):** Basit bot korumalarına takılmamak için tıklamaların arasına +- %20 arasında tamamen makine yapası olmayan, organik "Rastgele Gecikmeler" serpiştirerek insanlaştırma sağlar.
-- **🎯 Kilitli Hedef Belirleme:** Bir tuşla ekrandaki (X,Y) koordinatlarını kilitlersiniz. Ardından farenizi nereye çekerseniz çekin, program inatla başlattığınız hedefe tıklamaya devam eder.
-- **🗃️ Seçilebilir Kısayol (Custom Hotkey) & Save/Load Sistemi:**
-  - Uygulamayı Başlatma/Durdurma kısayolunu herhangi bir tuşa (F6, F12, vb.) serbestçe atayabilirsiniz. Oyun oynarken veya arka plandayken her zaman dinler.
-  - CPS Hızınız, Atadığınız kısayol tuşunuz, seçtiğiniz ayarlar uygulama kapatıldığında otomatik olarak arka planda kaydedilir. Ertesi gün kaldığınız yerden devam edersiniz.
+- **👁️ Piksel Tarayıcı (Reaction Bot):** Belirlediğiniz bir (X,Y) noktasındaki **Renkte (%5-10 tolerans esnekliği ile)** bir eşleşme veya değişim yakalandığında, bir programcı zekasıyla anında fare tıklayabilir, özel bir tuşa basabilir veya uyarı zili çalabilir. Videolarda ya da oyun içi envanter yönetimlerinde mükemmeldir!
+- **🔗 Zincir Makro Motoru:** Basit tıklamaları unutun. Fare hareketi (X,Y), Klavye vuruşları ve Bekleme (ms) sürelerini art arda listeleyerek sonsuz döngülü dev kombinaosyonlar inşa edin.
+- **🛡️ İnsan Modu (Humanizer / Anti-Ban):** Girdiğiniz saniye / milisaniye komutlarına +- %15 arasında kusursuz rastgeleliğe sahip, "Organik Dalgalanmalar" ekleyerek bot korumalarını (Anti-Bot) insan olduğunuza ikna eder.
+- **🛑 Akıllı Limitör Sistemi (Otomatik Kapanış):** Bilgisayarı / Oyunu kendi haline bıraktığınızda belirlenen bir `Dakika` veya gerçekleştirilen `İşlem (Döngü) Sayısı` dolduğunda önce makroyu keser, isterseniz bilgisayarı komple otomatik kapatarak (Shutdown) elektrik faturasını kurtarır!
+- **🌐 Evrensel Dil (i18n):** TR, EN, DE, FR, IT ve RU dahil tam 6 adet dünya dilini anında çevirisini barındırır. Erişilebilirlik `[ ? ]` bilgi butonlarıyla tüm karmaşık ayarları kullanımınıza sadeleştirir.
+- **🎨 FlatLaf Özelleştirilebilir Arayüz:** Modern "Dark Mode" temasının yanı sıra, programın çalışma esnasında kapatılmadan bile metin renklerini, ikon boyutlarını ve "Aydınlık/Karanlık" tonlarını anlık (Live Reload) değiştirebileceğiniz gelişmiş stil yapısı!
+- **🗃️ Seçilebilir Kısayol (Global Hotkey) & Save Sistemi:** Tuşlarınızı atayın (F6 vb.) ve pencere alta atıldığında dahi çalışsın! Tüm zincir makroları, ayarlarınız, renk profiliniz arkada sürekli anında şifrelenerek saklanır, ertesi gün eksiksiz kaldığınız yerden devam edersiniz.
 
 ## 🚀 Kurulum ve Kullanım
 
 ### Gereksinimler
-Sisteminizde **Java (JDK veya JRE 8+)** kurulu olmalıdır.
+Platformdan bağımsızdır, sisteminizde **Java (JDK veya JRE 8+)** kurulu olmalıdır.
 
 ### Hızlı Başlangıç
 1. Proje ana klasöründeki **`run.bat`** dosyasına çift tıklayın.
-2. İlk çalışmada ek UI dinleyici kütüphaneleri (`FlatLaf` ve `JNativeHook`) sizin için PowerShell üzerinden otomatik indirilecek klasöre dahil edilecektir.
-3. Uygulama arayüzü açıldığında:
-   - "Fare Makrosu" veya "Klavye Makrosu" sekmelerinden birine girip CPS (Hız) değerinizi ve gerekli hedeflerinizi belirleyin.
-   - Herhangi bir ekranda oyundayken veya çalışırken kısayol tuşunuzla (Varsayılan: **F6**) eylemi başlatın ve durdurun!
+2. İlk çalıştırmanız esnasında UI ek kütüphaneleri (`FlatLaf` ve `JNativeHook`) kod dizinine (`lib/`) PowerShell scriptleri ile sizin için otomatik indirilir!
+3. Uygulama arayüzünden ihtiyacınız olan sekmeye girin (Normal Makro, Zincir, Piksel). Programın `[ ? ]` tuşlarını takip ederek bilgilenin.
+4. Oyun/Belge içerisinde dilediğiniz vakit Kısayol Tuşunuzla (**Standart: F6**) komut zincirini kırbaçlayın!
 
-## 🛠️ Teknolojiler
-- **Java Swing & FlatLaf:** Modern Arayüz ve sekme yönetimi.
-- **Java AWT Robot:** Koordinat ve mekanik işletim sistemi komut simülasyonu.
-- **JNativeHook:** İşletim sistemine doğrudan bağlantı kuran arka plan (global) tuş / fare dinleyicisi.
+## 🛠️ Mimari & Teknolojiler
+- **Java Swing & FormDev FlatLaf:** Modern Arayüz ve UI sekme/renk yönetimi.
+- **Java AWT Robot / MouseInfo:** DPI'a (-ölçeklendirmeye) duyarlı Koordinat, Piksel okuma ve mekanik donanım simülasyonu.
+- **JNativeHook:** İşletim sistemine (Kernel seviyesinde) bağlanan çok katmanlı Anti-Blok arka plan tuş dinleme kütüphanesi.
+- **i18n In-Memory Mapping:** 6 dilde kayıpsız & gecikmesiz Hot-Reload Çeviri Mimarisi.

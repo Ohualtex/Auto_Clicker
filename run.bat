@@ -17,7 +17,7 @@ IF NOT EXIST "lib\flatlaf.jar" (
 )
 
 echo [INFO] Kod derleniyor...
-javac -cp ".;lib\jnativehook.jar;lib\flatlaf.jar" AutoClicker.java
+javac -encoding UTF-8 -cp ".;lib\jnativehook.jar;lib\flatlaf.jar" AutoClicker.java
 IF %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Derleme hatasi olustu! Lutfen dosyayi kontrol edin.
     pause
@@ -25,5 +25,5 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 echo [INFO] AutoClicker baslatiliyor...
-start javaw -cp ".;lib\jnativehook.jar;lib\flatlaf.jar" AutoClicker
+start javaw -Dfile.encoding=UTF-8 -cp ".;lib\jnativehook.jar;lib\flatlaf.jar" AutoClicker
 exit

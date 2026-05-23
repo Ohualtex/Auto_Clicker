@@ -1,32 +1,110 @@
-# 🖱️ AutoClicker Ultimate (V5 Suite)
+<div align="center">
 
-Sürekli tıklamaktan veya aynı klavye kombinasyonlarını girmekten usandınız mı? O zaman oyunları kurallarına, hayatı akışına göre oynatan profesyonel araca hoş geldiniz! ^-^ 
+# 🖱️ AutoClicker Ultimate
 
-Java tabanlı `AutoClicker Ultimate v5.3`, eski nesil basit tıklayıcıların ötesine geçerek; **Piksel (Renk) Analizi yapabilen Zeka**, **Zincir Makro (Combo) Dizilimleri**, **Oto-Bilgisayar Kapatıcı** gibi ileri teknoloji sistemleri barındıran tam donanımlı profesyonel bir otomasyon yazılımıdır.
+**Java tabanlı · modern · çok dilli · insan benzeri davranış üreten profesyonel makro motoru.**
 
-## 🌟 Öne Çıkan Özellikler (Ultimate Sürüm)
+[![Java](https://img.shields.io/badge/Java-8%2B-orange?logo=oracle&logoColor=white)](https://www.oracle.com/java/)
+[![FlatLaf](https://img.shields.io/badge/UI-FlatLaf%203.4.1-blueviolet)](https://www.formdev.com/flatlaf/)
+[![JNativeHook](https://img.shields.io/badge/Hook-JNativeHook%202.2.2-success)](https://github.com/kwhat/jnativehook)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)]()
+[![i18n](https://img.shields.io/badge/Dil-TR%20%7C%20EN%20%7C%20DE%20%7C%20FR%20%7C%20IT%20%7C%20RU-informational)]()
 
-- **👁️ Piksel Tarayıcı (Reaction Bot):** Belirlediğiniz bir (X,Y) noktasındaki **Renkte (%5-10 tolerans esnekliği ile)** bir eşleşme veya değişim yakalandığında, bir programcı zekasıyla anında fare tıklayabilir, özel bir tuşa basabilir veya uyarı zili çalabilir. Videolarda ya da oyun içi envanter yönetimlerinde mükemmeldir!
-- **🔗 Zincir Makro Motoru:** Basit tıklamaları unutun. Fare hareketi (X,Y), Klavye vuruşları ve Bekleme (ms) sürelerini art arda listeleyerek sonsuz döngülü dev kombinaosyonlar inşa edin.
-- **🛡️ İnsan Modu (Humanizer / Anti-Ban):** Girdiğiniz saniye / milisaniye komutlarına +- %15 arasında kusursuz rastgeleliğe sahip, "Organik Dalgalanmalar" ekleyerek bot korumalarını (Anti-Bot) insan olduğunuza ikna eder.
-- **🛑 Akıllı Limitör Sistemi (Otomatik Kapanış):** Bilgisayarı / Oyunu kendi haline bıraktığınızda belirlenen bir `Dakika` veya gerçekleştirilen `İşlem (Döngü) Sayısı` dolduğunda önce makroyu keser, isterseniz bilgisayarı komple otomatik kapatarak (Shutdown) elektrik faturasını kurtarır!
-- **🌐 Evrensel Dil (i18n):** TR, EN, DE, FR, IT ve RU dahil tam 6 adet dünya dilini anında çevirisini barındırır. Erişilebilirlik `[ ? ]` bilgi butonlarıyla tüm karmaşık ayarları kullanımınıza sadeleştirir.
-- **🎨 FlatLaf Özelleştirilebilir Arayüz:** Modern "Dark Mode" temasının yanı sıra, programın çalışma esnasında kapatılmadan bile metin renklerini, ikon boyutlarını ve "Aydınlık/Karanlık" tonlarını anlık (Live Reload) değiştirebileceğiniz gelişmiş stil yapısı!
-- **🗃️ Seçilebilir Kısayol (Global Hotkey) & Save Sistemi:** Tuşlarınızı atayın (F6 vb.) ve pencere alta atıldığında dahi çalışsın! Tüm zincir makroları, ayarlarınız, renk profiliniz arkada sürekli anında şifrelenerek saklanır, ertesi gün eksiksiz kaldığınız yerden devam edersiniz.
+Sürekli tıklamaktan ve aynı tuş kombinasyonlarını girmekten usandınız mı?
+Oyunları kurallarına, hayatı akışına bırakan profesyonel araca hoş geldiniz. ^-^
 
-## 🚀 Kurulum ve Kullanım
+</div>
+
+---
+
+## 🌟 Öne Çıkan Özellikler
+
+### Otomasyon Çekirdeği
+- **👁️ Piksel Tarayıcı (Reaction Bot)** — Belirlediğiniz (X,Y) noktasındaki renkte **%5–10 tolerans** ile eşleşme veya değişim yakalandığında anında: fare tıklayabilir, özel bir tuşa basabilir, uyarı zili çalabilir. Envanter yönetiminden alarm sistemlerine kadar geniş kullanım alanı.
+- **🔗 Zincir Makro (Combo) Motoru** — Fare hareketi (X,Y), klavye vuruşları ve bekleme (ms) adımlarını sıralayarak sonsuz döngülü dev kombinasyonlar inşa edin.
+- **🖱️ Klasik Auto-Clicker & Auto-Typer** — Sol/Sağ/Orta/Çift tıklama ve istediğiniz tuşa periyodik basma (1–100 CPS), kilitli hedef koordinat opsiyonu.
+
+### Akıllı Davranış
+- **🛡️ İnsan Modu (Humanizer / Anti-Ban)** — Saniye/milisaniye komutlarına ±%15 rastgele, **organik dalgalanma** ekleyerek bot korumalarını insan olduğunuza ikna eder.
+- **🛑 Akıllı Limitör (Otomatik Kapanış)** — `Dakika` veya `Döngü Sayısı` dolduğunda makroyu durdurur; isterseniz **bilgisayarı güvenli kapatma**. Windows / macOS / Linux için uygun komutu çağırır, bilinmeyen sistemde sessiz kalmaz uyarı verir.
+
+### Kullanıcı Deneyimi
+- **🌐 6 Dilde Anlık Çeviri (i18n)** — TR · EN · DE · FR · IT · RU. Dil geçişi gerçek zamanlı, yeniden başlatma yok.
+- **🎨 Canlı Tema & Renk Sistemi** — FlatLaf Dark/Light tonu, metin rengi ve font boyutu çalışma esnasında değiştirilebilir.
+- **ⓘ Bağlam Bilgi Butonları** — Her karmaşık ayarın yanındaki bilgi ikonu özelliği anlık açıklar (CPS, piksel koşulu, tarama hızı, anti-ban, limitör...).
+- **🗃️ Global Hotkey & Otomatik Kayıt** — Tetik tuşunu serbestçe atayın (varsayılan **F6**), pencere arka planda olsa da çalışır. Tüm ayarlar, zincirler ve renk profili `config.properties` dosyasında kalıcı saklanır.
+
+---
+
+## 🧭 Sekmeler
+
+| Sekme | Açıklama |
+|---|---|
+| 🖱️ **Fare** | Klasik auto-clicker. CPS slider, tıklama tipi, kilitli koordinat seçeneği. |
+| ⌨️ **Klavye** | Belirli bir tuşa periyodik basma. |
+| 🔗 **Zincir** | Combo macro: tıklama + tuş + ışınlama + bekleme adımlarından oluşan sıralı senaryo. |
+| 👁️ **Piksel** | Renk algılama tabanlı tepki botu. Eşleşme/Değişim koşulu + tolerans. |
+| ⚙️ **Ayarlar** | Hotkey, dil, tema, renk, limitör konfigürasyonu. |
+
+---
+
+## 🚀 Kurulum
 
 ### Gereksinimler
-Platformdan bağımsızdır, sisteminizde **Java (JDK veya JRE 8+)** kurulu olmalıdır.
+- **Java JDK veya JRE 8+** (`java -version` ile kontrol)
+- Windows için `run.bat` her şeyi halleder; diğer platformlarda aşağıdaki manuel adımlar.
 
-### Hızlı Başlangıç
-1. Proje ana klasöründeki **`run.bat`** dosyasına çift tıklayın.
-2. İlk çalıştırmanız esnasında UI ek kütüphaneleri (`FlatLaf` ve `JNativeHook`) kod dizinine (`lib/`) PowerShell scriptleri ile sizin için otomatik indirilir!
-3. Uygulama arayüzünden ihtiyacınız olan sekmeye girin (Normal Makro, Zincir, Piksel). Programın `[ ? ]` tuşlarını takip ederek bilgilenin.
-4. Oyun/Belge içerisinde dilediğiniz vakit Kısayol Tuşunuzla (**Standart: F6**) komut zincirini kırbaçlayın!
+### Hızlı Başlangıç (Windows)
+1. **`run.bat`** dosyasına çift tıklayın.
+2. İlk çalıştırmada FlatLaf ve JNativeHook jar'ları PowerShell ile `lib/` altına otomatik indirilir.
+3. Açılan arayüzde sekmenizi seçin; her ayarın yanındaki **ⓘ** butonuna tıklayarak işlevini öğrenin.
+4. Oyun/uygulama içindeyken hotkey'inizle (varsayılan **F6**) başlatın/durdurun.
+
+### Manuel Derleme (macOS / Linux)
+```bash
+mkdir -p lib
+curl -sL https://repo1.maven.org/maven2/com/github/kwhat/jnativehook/2.2.2/jnativehook-2.2.2.jar -o lib/jnativehook.jar
+curl -sL https://repo1.maven.org/maven2/com/formdev/flatlaf/3.4.1/flatlaf-3.4.1.jar    -o lib/flatlaf.jar
+javac -cp ".:lib/*" AutoClicker.java
+java  -Dfile.encoding=UTF-8 -cp ".:lib/*" AutoClicker
+```
+
+---
+
+## ⌨️ Kısayollar
+
+| Tuş | Eylem |
+|---|---|
+| **F6** *(varsayılan)* | Aktif sekmenin makrosunu **Başlat / Durdur** |
+| **Orta Tık** | Konum seçme modunda hedefi kilitler |
+| **Ayarlar → Hotkey** | İstediğiniz herhangi bir tuşa kısayol atama |
+
+---
 
 ## 🛠️ Mimari & Teknolojiler
-- **Java Swing & FormDev FlatLaf:** Modern Arayüz ve UI sekme/renk yönetimi.
-- **Java AWT Robot / MouseInfo:** DPI'a (-ölçeklendirmeye) duyarlı Koordinat, Piksel okuma ve mekanik donanım simülasyonu.
-- **JNativeHook:** İşletim sistemine (Kernel seviyesinde) bağlanan çok katmanlı Anti-Blok arka plan tuş dinleme kütüphanesi.
-- **i18n In-Memory Mapping:** 6 dilde kayıpsız & gecikmesiz Hot-Reload Çeviri Mimarisi.
+
+| Katman | Bileşen | Sürüm | Görev |
+|---|---|---|---|
+| UI | Java Swing + FormDev FlatLaf | 3.4.1 | Sekmeler, ikonlar, canlı tema |
+| Donanım | `java.awt.Robot` + `MouseInfo` | JDK | DPI uyumlu koordinat, tıklama/tuş simülasyonu |
+| Global Hook | JNativeHook | 2.2.2 | OS-seviyesi (kernel) tuş & fare dinleme |
+| i18n | In-memory `String[][]` mapping | — | 6 dil hot-reload, restart yok |
+| Persistence | `java.util.Properties` | JDK | `config.properties` — ayarlar, zincirler, renkler |
+
+---
+
+## 📌 Notlar & Uyumluluk
+
+- **Karakter kodlaması:** `run.bat`, `javaw` çağrısına `-Dfile.encoding=UTF-8` ekler. Türkçe karakterler `ç ğ ı ö ş ü` doğru render edilir.
+- **Otomatik kapatma:** Limitör → *Shutdown* seçimi Windows'ta `shutdown -s -t 15`, macOS/Linux'ta `shutdown -h +1` çağırır. Bilinmeyen sistemde kullanıcıya uyarı verir, müdahale etmez.
+- **JNativeHook + macOS:** macOS'ta *Erişilebilirlik* izni gerekir (`System Settings → Privacy & Security → Accessibility`).
+- **Anti-cheat oyunlar:** Bu araç öğrenme ve verimlilik amacıyla yapılmıştır. Çok oyunculu / anti-cheat korumalı oyunlarda kullanmak hesap askısı veya ban riski taşır — sorumluluk kullanıcıya aittir.
+
+---
+
+<div align="center">
+
+**AutoClicker Ultimate** — V6 sürüm hattı
+Made with ☕ and Java Swing
+
+</div>

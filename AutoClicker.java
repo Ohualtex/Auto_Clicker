@@ -991,7 +991,8 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 return false;
             }
         } else if (cfg.type == 1) {
-            if (iterationCount >= cfg.value) {
+            // iteration kontrolden once 1-artiriliyor; tam cfg.value eylem icin > kullan (>= olunca N-1 olurdu)
+            if (iterationCount > cfg.value) {
                 executeLimitAction(cfg.action);
                 return false;
             }

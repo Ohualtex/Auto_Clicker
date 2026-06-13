@@ -99,6 +99,12 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             d.put("info_cps", new String[]{"Saniyedeki tiklama hizini belirler (Click Per Second).", "Sets the click speed per second (CPS).", "Legt die Klicks pro Sekunde fest.", "Définit la vitesse de clic (CPS).", "Imposta i clic al secondo (CPS).", "Устанавливает кликов в секунду (CPS)."});
             d.put("info_px_cond", new String[]{"Eslestiginde: Renk gorundugunde tepki verir.\nDegistiginde: Renk kayboldugunda tepki verir.", "Matches: Reacts when color appears.\nChanges: Reacts when color disappears.", "Stimmt überein: Reagiert, wenn die Farbe erscheint.", "Correspond: Agit quand la couleur apparait.", "Corrisponde: Agisce quando il colore appare.", "Совпадает: Реагирует на появление цвета."});
             d.put("info_px_rate", new String[]{"Tarama Hizi: Ekranin ne siklikla kontrol edilecegini belirler (Milisaniye).", "Scan Rate: How often to check the screen (Milliseconds).", "Scanrate: Wie oft der Bildschirm überprüft wird (ms).", "Taux de scan: Fréquence de vérification (ms).", "Velocità scan: Frequenza di controllo schermo (ms).", "Скорость: Частота проверки экрана (мс)."});
+
+            d.put("info_title", new String[]{"Bilgi", "Info", "Info", "Info", "Info", "Информация"});
+            d.put("reset", new String[]{"Sifirla", "Reset", "Zurücksetzen", "Réinit.", "Reimposta", "Сброс"});
+            d.put("shut_ok", new String[]{"Limit asildi! Bilgisayar %s icinde kapatilacak.", "Limit reached! PC will shut down in %s.", "Limit erreicht! PC fährt in %s herunter.", "Limite atteinte! Le PC s'eteindra dans %s.", "Limite raggiunto! Il PC si spegnera tra %s.", "Лимит достигнут! ПК выключится через %s."});
+            d.put("shut_fail", new String[]{"Kapatma komutu basarisiz oldu: ", "Shutdown command failed: ", "Herunterfahren fehlgeschlagen: ", "Echec de la commande d'arret: ", "Comando di spegnimento fallito: ", "Сбой команды выключения: "});
+            d.put("shut_unsup", new String[]{"Bu isletim sisteminde otomatik kapatma desteklenmiyor: ", "Automatic shutdown not supported on this OS: ", "Automatisches Herunterfahren auf diesem OS nicht unterstützt: ", "Arret automatique non supporte sur cet OS: ", "Spegnimento automatico non supportato su questo OS: ", "Автовыключение не поддерживается в этой ОС: "});
         }
         static String get(String key) { return d.containsKey(key) ? d.get(key)[L] : key; }
     }
@@ -306,7 +312,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setToolTipText("<html><p width=\"250\">" + Lang.get(tooltipKey) + "</p></html>");
-        btn.addActionListener(e -> JOptionPane.showMessageDialog(this, Lang.get(tooltipKey), "Bilgi / Info", JOptionPane.INFORMATION_MESSAGE));
+        btn.addActionListener(e -> JOptionPane.showMessageDialog(this, Lang.get(tooltipKey), Lang.get("info_title"), JOptionPane.INFORMATION_MESSAGE));
         return btn;
     }
 
@@ -921,7 +927,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             if(chosen != null) customColorPreview.setBackground(chosen);
         });
         
-        JButton btnDefaultColor = new JButton("RESET");
+        JButton btnDefaultColor = new JButton(Lang.get("reset"));
         btnDefaultColor.addActionListener(e -> customColorPreview.setBackground(Color.WHITE));
 
         pCol.add(customColorPreview); pCol.add(customColorBtn); pCol.add(btnDefaultColor);
@@ -1041,14 +1047,14 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 final String label = delayLabel;
                 try {
                     Runtime.getRuntime().exec(cmd);
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Limit asildi! Bilgisayar " + label + " icinde kapatilacak."));
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, String.format(Lang.get("shut_ok"), label)));
                 } catch (Exception e) {
                     final String err = String.valueOf(e.getMessage());
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Kapatma komutu basarisiz oldu: " + err));
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, Lang.get("shut_fail") + err));
                 }
             } else {
                 final String osName = os;
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Bu isletim sisteminde otomatik kapatma desteklenmiyor: " + osName));
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, Lang.get("shut_unsup") + osName));
             }
         } else {
             SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
@@ -1350,7 +1356,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 if(macroCoordLblInfo != null) {
                     macroCoordLblInfo.setText("X: " + macroTempPt.x + " Y: " + macroTempPt.y);
                     macroCoordLblInfo.getParent().getComponent(0).setForeground(Color.GREEN);
-                    ((JButton)macroCoordLblInfo.getParent().getComponent(0)).setText("V");
+                    ((JButton)macroCoordLblInfo.getParent().getComponent(0)).setText("✔");
                 }
             });
         }
@@ -1367,7 +1373,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 pixelColorPreview.setToolTipText("RGB: " + c.getRed() + "," + c.getGreen() + "," + c.getBlue());
                 
                 JButton btn = (JButton)((JPanel)pixelCoordLbl.getParent()).getComponent(0);
-                btn.setText("V");
+                btn.setText("✔");
                 btn.setForeground(UIManager.getColor("Button.foreground"));
             });
         }

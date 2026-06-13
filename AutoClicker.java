@@ -483,7 +483,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             }
             targetCoordBox.setSelected(Boolean.parseBoolean(props.getProperty("mouseUseCoord", "false")));
 
-            keyCpsSlider.setValue(Integer.parseInt(props.getProperty("keyCps", "10")));
+            keyCpsSlider.setValue(Integer.parseInt(props.getProperty("keyCps", "5")));
             selectedNativeKeyCode = Integer.parseInt(props.getProperty("keyTargetCode", String.valueOf(KeyEvent.VK_SPACE)));
             keyTargetField.setText(KeyEvent.getKeyText(selectedNativeKeyCode));
             keyHumanizerBox.setSelected(Boolean.parseBoolean(props.getProperty("keyHumanizer", "false")));

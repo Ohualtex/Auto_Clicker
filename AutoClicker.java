@@ -421,8 +421,8 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             if (!customColorPreview.getBackground().equals(Color.WHITE)) {
                 props.setProperty("fontColor", String.valueOf(customColorPreview.getBackground().getRGB()));
             } else {
-                props.remove("fontColor"); 
-                props.setProperty("fontColor", String.valueOf(customColorPreview.getBackground().getRGB()));
+                // WHITE = varsayilan: ozel renk anahtarini tamamen kaldir ki RESET gercekten varsayilana donsun
+                props.remove("fontColor");
             }
             
             props.setProperty("langIndex", String.valueOf(langBox.getSelectedIndex()));

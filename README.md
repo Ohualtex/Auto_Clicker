@@ -65,7 +65,7 @@ Oyunları kurallarına, hayatı akışına bırakan profesyonel araca hoş geldi
 mkdir -p lib
 curl -sL https://repo1.maven.org/maven2/com/github/kwhat/jnativehook/2.2.2/jnativehook-2.2.2.jar -o lib/jnativehook.jar
 curl -sL https://repo1.maven.org/maven2/com/formdev/flatlaf/3.4.1/flatlaf-3.4.1.jar    -o lib/flatlaf.jar
-javac -cp ".:lib/*" AutoClicker.java
+javac -encoding UTF-8 -cp ".:lib/*" AutoClicker.java
 java  -Dfile.encoding=UTF-8 -cp ".:lib/*" AutoClicker
 ```
 

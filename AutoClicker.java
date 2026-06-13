@@ -205,7 +205,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         Lang.L = Integer.parseInt(props.getProperty("langIndex", "0"));
         applyInitialTheme();
 
-        setTitle("AutoClicker Ultimate v5.3");
+        setTitle("AutoClicker Ultimate v6.1");
         setSize(600, 780);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);

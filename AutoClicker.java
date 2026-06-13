@@ -996,15 +996,28 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         });
     }
 
+    private void stopWorker() {
+        isRunning = false;
+        Thread t = workerThread;
+        if (t != null && t.isAlive()) {
+            t.interrupt(); // bekleyen Thread.sleep'i uyandir
+            try { t.join(800); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        }
+        workerThread = null;
+    }
+
     private void toggle() {
         if (isRunning) {
-            isRunning = false;
+            stopWorker();
             statusLabel.setText(Lang.get("st_idle"));
             statusLabel.setForeground(new Color(255, 90, 90));
         } else {
+            // Eski worker hala canliysa once tamamen durdur (cift makro yarisini onler)
+            stopWorker();
+
             JTabbedPane tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
             int selectedTab = tabs.getSelectedIndex();
-            
+
             if (selectedTab == 0) startMouseMacro();
             else if (selectedTab == 1) startKeyMacro();
             else if (selectedTab == 2) startChainMacro();

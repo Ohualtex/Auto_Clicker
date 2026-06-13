@@ -128,10 +128,10 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private final String CONFIG_FILE = "config.properties";
     private Properties props = new Properties();
 
-    private int triggerKey = NativeKeyEvent.VC_F6; 
-    private boolean listeningForHotkey = false;
-    
-    private boolean isRunning = false;
+    private volatile int triggerKey = NativeKeyEvent.VC_F6;
+    private volatile boolean listeningForHotkey = false;
+
+    private volatile boolean isRunning = false;
     private Thread workerThread;
     private Robot robot;
     private Random random = new Random();
@@ -153,8 +153,8 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private JCheckBox mouseHumanizerBox;
     private JCheckBox targetCoordBox;
     private JLabel coordLabel;
-    private Point targetPoint = null;
-    private boolean listeningForCoordParams = false;
+    private volatile Point targetPoint = null;
+    private volatile boolean listeningForCoordParams = false;
 
     // Keyboard
     private JTextField keyTargetField;
@@ -167,14 +167,14 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private DefaultListModel<MacroAction> chainModel = new DefaultListModel<>();
     private JList<MacroAction> chainList;
     private JCheckBox chainHumanizerBox;
-    private boolean listeningForMacroCoord = false;
+    private volatile boolean listeningForMacroCoord = false;
     private JLabel macroCoordLblInfo;
-    private Point macroTempPt;
+    private volatile Point macroTempPt;
 
     // Pixel Trigger
-    private boolean listeningForPixelCoord = false;
-    private Point pixelPoint = null;
-    private Color pixelColor = null;
+    private volatile boolean listeningForPixelCoord = false;
+    private volatile Point pixelPoint = null;
+    private volatile Color pixelColor = null;
     private JLabel pixelCoordLbl;
     private JPanel pixelColorPreview;
     private JComboBox<String> pxConditionBox;

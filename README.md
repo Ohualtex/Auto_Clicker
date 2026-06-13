@@ -20,7 +20,7 @@ Oyunları kurallarına, hayatı akışına bırakan profesyonel araca hoş geldi
 ## 🌟 Öne Çıkan Özellikler
 
 ### Otomasyon Çekirdeği
-- **👁️ Piksel Tarayıcı (Reaction Bot)** — Belirlediğiniz (X,Y) noktasındaki renkte **%5–10 tolerans** ile eşleşme veya değişim yakalandığında anında: fare tıklayabilir, özel bir tuşa basabilir, uyarı zili çalabilir. Envanter yönetiminden alarm sistemlerine kadar geniş kullanım alanı.
+- **👁️ Piksel Tarayıcı (Reaction Bot)** — Belirlediğiniz (X,Y) noktasındaki renkte **ayarlanabilir tolerans (%1–100, varsayılan %5)** ile eşleşme veya değişim yakalandığında anında: fare tıklayabilir, özel bir tuşa basabilir, uyarı zili çalabilir. Envanter yönetiminden alarm sistemlerine kadar geniş kullanım alanı.
 - **🔗 Zincir Makro (Combo) Motoru** — Fare hareketi (X,Y), klavye vuruşları ve bekleme (ms) adımlarını sıralayarak sonsuz döngülü dev kombinasyonlar inşa edin.
 - **🖱️ Klasik Auto-Clicker & Auto-Typer** — Sol/Sağ/Orta/Çift tıklama ve istediğiniz tuşa periyodik basma (1–100 CPS), kilitli hedef koordinat opsiyonu.
 
@@ -51,7 +51,7 @@ Oyunları kurallarına, hayatı akışına bırakan profesyonel araca hoş geldi
 ## 🚀 Kurulum
 
 ### Gereksinimler
-- **Java JDK veya JRE 8+** (`java -version` ile kontrol)
+- **Java JDK veya JRE 8+** (minimum gereksinim; geliştirme/test JDK 25 ile yapıldı — `java -version` ile kontrol)
 - Windows için `run.bat` her şeyi halleder; diğer platformlarda aşağıdaki manuel adımlar.
 
 ### Hızlı Başlangıç (Windows)

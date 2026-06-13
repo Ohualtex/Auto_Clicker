@@ -1002,11 +1002,27 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
     private void executeLimitAction(int action) {
         isRunning = false;
-        if(action == 1) { 
-            try {
-                Runtime.getRuntime().exec("shutdown -s -t 15");
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "SHUTDOWN IN 15 SECONDS!"));
-            } catch(Exception e) {}
+        if(action == 1) { // bilgisayari kapat
+            String os = System.getProperty("os.name").toLowerCase();
+            String[] cmd = null;
+            String delayLabel = null;
+            if (os.contains("win")) { cmd = new String[]{"shutdown", "-s", "-t", "15"}; delayLabel = "15 sn"; }
+            else if (os.contains("mac")) { cmd = new String[]{"shutdown", "-h", "+1"}; delayLabel = "1 dk"; }
+            else if (os.contains("nux") || os.contains("nix") || os.contains("aix")) { cmd = new String[]{"shutdown", "-h", "+1"}; delayLabel = "1 dk"; }
+
+            if (cmd != null) {
+                final String label = delayLabel;
+                try {
+                    Runtime.getRuntime().exec(cmd);
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Limit asildi! Bilgisayar " + label + " icinde kapatilacak."));
+                } catch (Exception e) {
+                    final String err = String.valueOf(e.getMessage());
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Kapatma komutu basarisiz oldu: " + err));
+                }
+            } else {
+                final String osName = os;
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "Bu isletim sisteminde otomatik kapatma desteklenmiyor: " + osName));
+            }
         } else {
             SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
         }

@@ -381,7 +381,12 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         try (FileInputStream fis = new FileInputStream(CONFIG_FILE)) {
             props.load(fis);
             triggerKey = Integer.parseInt(props.getProperty("hotkey", String.valueOf(NativeKeyEvent.VC_F6)));
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            // Ilk acilista dosya yoklugu normaldir; digerlerini bildir
+            if (!(e instanceof java.io.FileNotFoundException)) {
+                System.err.println("[AutoClicker] Config okunamadi: " + e.getMessage());
+            }
+        }
     }
 
     private void saveConfig() {
@@ -440,7 +445,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             props.setProperty("langIndex", String.valueOf(langBox.getSelectedIndex()));
 
             props.store(fos, "AutoClicker Configuration");
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.err.println("[AutoClicker] Config kaydedilemedi: " + e.getMessage());
+        }
     }
 
     private void initUI() {
@@ -529,7 +536,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             if(props.containsKey("fontColor")) customColorPreview.setBackground(new Color(Integer.parseInt(props.getProperty("fontColor"))));
             langBox.setSelectedIndex(Integer.parseInt(props.getProperty("langIndex", "0")));
 
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.err.println("[AutoClicker] Config UI'ye uygulanamadi: " + e.getMessage());
+        }
     }
 
     private JPanel buildMousePanel() {

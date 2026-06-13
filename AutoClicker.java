@@ -193,7 +193,14 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private JComboBox<String> langBox;
 
     public AutoClicker() {
-        try { robot = new Robot(); } catch (Exception e) {}
+        try {
+            robot = new Robot();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null,
+                "java.awt.Robot baslatilamadi; uygulama calisamaz.\n" + e.getMessage(),
+                "Kritik Hata", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+        }
         loadConfig();
         Lang.L = Integer.parseInt(props.getProperty("langIndex", "0"));
         applyInitialTheme();

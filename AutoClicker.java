@@ -384,7 +384,12 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             props.setProperty("mouseCps", String.valueOf(mouseCpsSlider.getValue()));
             props.setProperty("mouseBtn", String.valueOf(mouseBtnBox.getSelectedIndex()));
             props.setProperty("mouseHumanizer", String.valueOf(mouseHumanizerBox.isSelected()));
-            
+            props.setProperty("mouseUseCoord", String.valueOf(targetCoordBox.isSelected()));
+            if (targetPoint != null) {
+                props.setProperty("mouseTargetX", String.valueOf(targetPoint.x));
+                props.setProperty("mouseTargetY", String.valueOf(targetPoint.y));
+            }
+
             props.setProperty("keyCps", String.valueOf(keyCpsSlider.getValue()));
             props.setProperty("keyTargetCode", String.valueOf(selectedNativeKeyCode));
             props.setProperty("keyHumanizer", String.valueOf(keyHumanizerBox.isSelected()));
@@ -465,7 +470,12 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             mouseCpsSlider.setValue(Integer.parseInt(props.getProperty("mouseCps", "10")));
             mouseBtnBox.setSelectedIndex(Integer.parseInt(props.getProperty("mouseBtn", "0")));
             mouseHumanizerBox.setSelected(Boolean.parseBoolean(props.getProperty("mouseHumanizer", "false")));
-            
+            if (props.containsKey("mouseTargetX") && props.containsKey("mouseTargetY")) {
+                targetPoint = new Point(Integer.parseInt(props.getProperty("mouseTargetX")), Integer.parseInt(props.getProperty("mouseTargetY")));
+                coordLabel.setText("(X: " + targetPoint.x + ", Y: " + targetPoint.y + ")");
+            }
+            targetCoordBox.setSelected(Boolean.parseBoolean(props.getProperty("mouseUseCoord", "false")));
+
             keyCpsSlider.setValue(Integer.parseInt(props.getProperty("keyCps", "10")));
             selectedNativeKeyCode = Integer.parseInt(props.getProperty("keyTargetCode", String.valueOf(KeyEvent.VK_SPACE)));
             keyTargetField.setText(KeyEvent.getKeyText(selectedNativeKeyCode));

@@ -1069,18 +1069,24 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             JTabbedPane tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
             int selectedTab = tabs.getSelectedIndex();
 
-            if (selectedTab == 0) startMouseMacro();
-            else if (selectedTab == 1) startKeyMacro();
-            else if (selectedTab == 2) startChainMacro();
-            else if (selectedTab == 3) startPixelMacro();
+            boolean started;
+            if (selectedTab == 0) started = startMouseMacro();
+            else if (selectedTab == 1) started = startKeyMacro();
+            else if (selectedTab == 2) started = startChainMacro();
+            else if (selectedTab == 3) started = startPixelMacro();
             else return;
 
-            statusLabel.setText(Lang.get("st_run"));
-            statusLabel.setForeground(new Color(90, 255, 90));
+            if (started) {
+                statusLabel.setText(Lang.get("st_run"));
+                statusLabel.setForeground(new Color(90, 255, 90));
+            } else {
+                statusLabel.setText(Lang.get("st_idle"));
+                statusLabel.setForeground(new Color(255, 90, 90));
+            }
         }
     }
 
-    private void startMouseMacro() {
+    private boolean startMouseMacro() {
         int cps = mouseCpsSlider.getValue();
         int baseDelay = 1000 / Math.max(cps, 1);
         int mode = mouseBtnBox.getSelectedIndex(); 
@@ -1119,9 +1125,10 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             }
         });
         workerThread.start();
+        return true;
     }
-    
-    private void startKeyMacro() {
+
+    private boolean startKeyMacro() {
         int cps = keyCpsSlider.getValue();
         int baseDelay = Math.max(1, 1000 / cps);
         boolean useHumanizer = keyHumanizerBox.isSelected();
@@ -1152,12 +1159,13 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             }
         });
         workerThread.start();
+        return true;
     }
 
-    private void startChainMacro() {
+    private boolean startChainMacro() {
         if (chainModel.isEmpty()) {
-            isRunning = false;
-            return;
+            SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
+            return false;
         }
 
         boolean useHumanizer = chainHumanizerBox.isSelected();
@@ -1213,12 +1221,13 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             if (!isRunning) SwingUtilities.invokeLater(() -> chainList.clearSelection());
         });
         workerThread.start();
+        return true;
     }
 
-    private void startPixelMacro() {
+    private boolean startPixelMacro() {
         if (pixelPoint == null || pixelColor == null) {
-            isRunning = false;
-            return;
+            SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
+            return false;
         }
 
         int scanRate = pxRateSlider.getValue();
@@ -1262,6 +1271,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             }
         });
         workerThread.start();
+        return true;
     }
 
     private double colorDistance(Color c1, Color c2) {

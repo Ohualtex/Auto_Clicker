@@ -505,14 +505,17 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             limitValField.setText(props.getProperty("limitVal", "60"));
             limitActionBox.setSelectedIndex(Integer.parseInt(props.getProperty("limitAction", "0")));
 
-            // px ui load
-            if(props.containsKey("pxX")) {
-                pixelPoint = new Point(Integer.parseInt(props.getProperty("pxX")), Integer.parseInt(props.getProperty("pxY")));
-                pixelColor = new Color(Integer.parseInt(props.getProperty("pxR")), Integer.parseInt(props.getProperty("pxG")), Integer.parseInt(props.getProperty("pxB")));
-                pixelCoordLbl.setText("X: " + pixelPoint.x + " Y: " + pixelPoint.y);
-                pixelColorPreview.setBackground(pixelColor);
-                pixelColorPreview.setToolTipText("RGB: " + pixelColor.getRed() + "," + pixelColor.getGreen() + "," + pixelColor.getBlue());
-            }
+            // px ui load (bozuk/eksik pixel config tum applyConfigToUI'yi kesmesin diye kendi try'inda)
+            try {
+                if (props.containsKey("pxX") && props.containsKey("pxY")
+                        && props.containsKey("pxR") && props.containsKey("pxG") && props.containsKey("pxB")) {
+                    pixelPoint = new Point(Integer.parseInt(props.getProperty("pxX")), Integer.parseInt(props.getProperty("pxY")));
+                    pixelColor = new Color(Integer.parseInt(props.getProperty("pxR")), Integer.parseInt(props.getProperty("pxG")), Integer.parseInt(props.getProperty("pxB")));
+                    pixelCoordLbl.setText("X: " + pixelPoint.x + " Y: " + pixelPoint.y);
+                    pixelColorPreview.setBackground(pixelColor);
+                    pixelColorPreview.setToolTipText("RGB: " + pixelColor.getRed() + "," + pixelColor.getGreen() + "," + pixelColor.getBlue());
+                }
+            } catch (Exception ex) { pixelPoint = null; pixelColor = null; }
             pxToleranceSlider.setValue(Integer.parseInt(props.getProperty("pxTolerance", "5")));
             pxRateSlider.setValue(Integer.parseInt(props.getProperty("pxRate", "100")));
             pxConditionBox.setSelectedIndex(Integer.parseInt(props.getProperty("pxCondition", "0")));

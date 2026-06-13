@@ -740,6 +740,14 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         dialog.setSize(400, 260);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        // Dialog kapaninca bekleyen konum-secimini iptal et; kapali dialog'a yazimi onle
+        dialog.addWindowListener(new WindowAdapter() {
+            @Override public void windowClosed(WindowEvent e) {
+                listeningForMacroCoord = false;
+                macroCoordLblInfo = null;
+            }
+        });
 
         JPanel configPanel = new JPanel(new CardLayout());
         configPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));

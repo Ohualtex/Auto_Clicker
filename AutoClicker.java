@@ -956,32 +956,41 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         } catch (NativeHookException e) {}
     }
 
-    private boolean checkLimits(long startTime, int iterationCount) {
-        if(!useLimitBox.isSelected() || !isRunning) return true; 
-        
-        try {
-            int limitVal = Integer.parseInt(limitValField.getText());
-            int type = limitTypeBox.getSelectedIndex();
-            
-            if (type == 0) { 
-                long elapsed = System.currentTimeMillis() - startTime;
-                if (elapsed >= (limitVal * 60000L)) {
-                    executeLimitAction();
-                    return false;
-                }
-            } else if (type == 1) { 
-                if (iterationCount >= limitVal) {
-                    executeLimitAction();
-                    return false;
-                }
-            }
-        } catch(Exception e) {}
-        return true; 
+    // Limit ayarlarinin worker thread'e gecirilecek anlik kopyasi (EDT-disi Swing erisimini onler)
+    static class LimitConfig {
+        final boolean enabled; final int type; final int value; final int action;
+        LimitConfig(boolean enabled, int type, int value, int action) {
+            this.enabled = enabled; this.type = type; this.value = value; this.action = action;
+        }
     }
 
-    private void executeLimitAction() {
+    // EDT'de cagrilmali: makro baslamadan once limit ayarlarini snapshot'lar
+    private LimitConfig snapshotLimits() {
+        int val;
+        try { val = Integer.parseInt(limitValField.getText()); } catch (Exception e) { val = 0; }
+        return new LimitConfig(useLimitBox.isSelected(), limitTypeBox.getSelectedIndex(), val, limitActionBox.getSelectedIndex());
+    }
+
+    private boolean checkLimits(LimitConfig cfg, long startTime, int iterationCount) {
+        if (cfg == null || !cfg.enabled || !isRunning) return true;
+
+        if (cfg.type == 0) {
+            long elapsed = System.currentTimeMillis() - startTime;
+            if (elapsed >= (cfg.value * 60000L)) {
+                executeLimitAction(cfg.action);
+                return false;
+            }
+        } else if (cfg.type == 1) {
+            if (iterationCount >= cfg.value) {
+                executeLimitAction(cfg.action);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void executeLimitAction(int action) {
         isRunning = false;
-        int action = limitActionBox.getSelectedIndex();
         if(action == 1) { 
             try {
                 Runtime.getRuntime().exec("shutdown -s -t 15");
@@ -1035,16 +1044,17 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         int mode = mouseBtnBox.getSelectedIndex(); 
         boolean useHumanizer = mouseHumanizerBox.isSelected();
         boolean useCoord = targetCoordBox.isSelected() && targetPoint != null;
-        
+        final LimitConfig limits = snapshotLimits();
+
         long startTime = System.currentTimeMillis();
-        
+
         isRunning = true;
         workerThread = new Thread(() -> {
             int iteration = 0;
             while (isRunning) {
                 iteration++;
-                if (!checkLimits(startTime, iteration)) break;
-                
+                if (!checkLimits(limits, startTime, iteration)) break;
+
                 try {
                     if (useCoord) {
                         robot.mouseMove(targetPoint.x, targetPoint.y);
@@ -1074,16 +1084,17 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         int baseDelay = Math.max(1, 1000 / cps);
         boolean useHumanizer = keyHumanizerBox.isSelected();
         final int targetKey = selectedNativeKeyCode;
+        final LimitConfig limits = snapshotLimits();
 
         long startTime = System.currentTimeMillis();
-        
+
         isRunning = true;
         workerThread = new Thread(() -> {
             int iteration = 0;
             while (isRunning) {
                 iteration++;
-                if (!checkLimits(startTime, iteration)) break;
-                
+                if (!checkLimits(limits, startTime, iteration)) break;
+
                 try {
                     robot.keyPress(targetKey);
                     robot.delay(20 + random.nextInt(30)); 
@@ -1104,17 +1115,21 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         }
 
         boolean useHumanizer = chainHumanizerBox.isSelected();
+        final LimitConfig limits = snapshotLimits();
+        // Worker thread'in DefaultListModel'a EDT-disi erismesini onlemek icin diziye snapshot al
+        final MacroAction[] actions = new MacroAction[chainModel.getSize()];
+        for (int i = 0; i < actions.length; i++) actions[i] = chainModel.get(i);
         long startTime = System.currentTimeMillis();
-        
+
         isRunning = true;
         workerThread = new Thread(() -> {
             int iteration = 0;
             while (isRunning) {
                 iteration++;
-                if (!checkLimits(startTime, iteration)) break;
-                
-                for (int i = 0; i < chainModel.getSize() && isRunning; i++) {
-                    MacroAction action = chainModel.get(i);
+                if (!checkLimits(limits, startTime, iteration)) break;
+
+                for (int i = 0; i < actions.length && isRunning; i++) {
+                    MacroAction action = actions[i];
                     final int idx = i;
                     SwingUtilities.invokeLater(() -> chainList.setSelectedIndex(idx)); 
 
@@ -1165,15 +1180,16 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         int condition = pxConditionBox.getSelectedIndex();
         int action = pxActionBox.getSelectedIndex();
         int targetKey = pxSelectedKey;
+        final LimitConfig limits = snapshotLimits();
 
         long startTime = System.currentTimeMillis();
         isRunning = true;
-        
+
         workerThread = new Thread(() -> {
             int iteration = 0;
             while(isRunning) {
                 iteration++;
-                if (!checkLimits(startTime, iteration)) break;
+                if (!checkLimits(limits, startTime, iteration)) break;
                 
                 Color current = robot.getPixelColor(pixelPoint.x, pixelPoint.y);
                 boolean isMatch = colorDistance(pixelColor, current) <= (tolerancePercent * 4.4167);

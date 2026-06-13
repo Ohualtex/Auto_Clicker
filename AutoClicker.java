@@ -155,7 +155,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     // Mouse
     private JComboBox<String> mouseBtnBox;
     private JSlider mouseCpsSlider;
-    private JTextField mouseCpsField;
     private JCheckBox mouseHumanizerBox;
     private JCheckBox targetCoordBox;
     private JLabel coordLabel;
@@ -165,7 +164,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     // Keyboard
     private JTextField keyTargetField;
     private JSlider keyCpsSlider;
-    private JTextField keyCpsField;
     private JCheckBox keyHumanizerBox;
     private int selectedNativeKeyCode = KeyEvent.VK_SPACE;
 
@@ -186,9 +184,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private JComboBox<String> pxConditionBox;
     private JComboBox<String> pxActionBox;
     private JSlider pxToleranceSlider;
-    private JTextField pxToleranceField;
     private JSlider pxRateSlider;
-    private JTextField pxRateField;
     private JTextField pxKeyField;
     private int pxSelectedKey = KeyEvent.VK_SPACE;
 
@@ -579,7 +575,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         humanizerPanel.add(createInfoButton("info_hum"));
         panel.add(humanizerPanel);
 
-        JPanel cpsPanel = createCpsPanel(Lang.get("cps"), "10", 100, "info_cps", slider -> mouseCpsSlider = slider, field -> mouseCpsField = field);
+        JPanel cpsPanel = createCpsPanel(Lang.get("cps"), "10", 100, "info_cps", slider -> mouseCpsSlider = slider);
         panel.add(cpsPanel);
 
         return panel;
@@ -620,7 +616,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         humanizerPanel.add(createInfoButton("info_hum"));
         panel.add(humanizerPanel);
 
-        JPanel cpsPanel = createCpsPanel(Lang.get("key_cps"), "5", 100, "info_cps", slider -> keyCpsSlider = slider, field -> keyCpsField = field);
+        JPanel cpsPanel = createCpsPanel(Lang.get("key_cps"), "5", 100, "info_cps", slider -> keyCpsSlider = slider);
         panel.add(cpsPanel);
 
         return panel;
@@ -701,7 +697,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         pCond.setBorder(BorderFactory.createTitledBorder(Lang.get("px_2")));
         pxConditionBox = new JComboBox<>(new String[]{Lang.get("px_cond1"), Lang.get("px_cond2")});
         
-        JPanel pTol = createCpsPanel(Lang.get("px_tol"), "5", 100, "info_px", slider -> pxToleranceSlider = slider, field -> pxToleranceField = field);
+        JPanel pTol = createCpsPanel(Lang.get("px_tol"), "5", 100, "info_px", slider -> pxToleranceSlider = slider);
         JPanel innerCond = new JPanel(new FlowLayout(FlowLayout.LEFT));
         innerCond.add(pxConditionBox); innerCond.add(createInfoButton("info_px_cond"));
         pCond.add(innerCond);
@@ -745,8 +741,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         JPanel pRate = createCpsPanel(Lang.get("px_rate"), "100", 2000, "info_px_rate", slider -> {
             pxRateSlider = slider;
             pxRateSlider.setMinimum(10);
-        }, field -> {
-            pxRateField = field;
         });
         panel.add(pRate);
 
@@ -937,12 +931,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         JButton applyStyleBtn = new JButton(Lang.get("apply_s"));
         applyStyleBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         applyStyleBtn.addActionListener(e -> {
-            boolean isDark = themeBox.getSelectedIndex() == 0;
-            int fSize = fontSlider.getValue();
-            Color fColor = null;
-            if(!customColorPreview.getBackground().equals(Color.WHITE)) {
-                fColor = customColorPreview.getBackground(); 
-            }
+            // saveConfig + rebuildUI zaten props/component'lerden okuyor; ara degiskenler gereksizdi
             saveConfig();
             rebuildUI();
         });
@@ -955,7 +944,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         return panel;
     }
 
-    private JPanel createCpsPanel(String title, String defaultVal, int max, String infoKey, java.util.function.Consumer<JSlider> setSlider, java.util.function.Consumer<JTextField> setField) {
+    private JPanel createCpsPanel(String title, String defaultVal, int max, String infoKey, java.util.function.Consumer<JSlider> setSlider) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createTitledBorder(title));
@@ -975,8 +964,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         });
 
         setSlider.accept(slider);
-        setField.accept(field);
-        
+
         inputPanel.add(slider);
         inputPanel.add(field);
         if (infoKey != null) {

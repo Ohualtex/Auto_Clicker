@@ -1107,11 +1107,15 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 if (!checkLimits(limits, startTime, iteration)) break;
 
                 try {
+                    // press->release araligini kisa tut ve CPS butcesinden dus ki gercek hiz hedefe yapissin
+                    int releaseGap = Math.min(baseDelay / 2, 5 + random.nextInt(10));
+                    if (releaseGap < 2) releaseGap = 2;
                     robot.keyPress(targetKey);
-                    robot.delay(20 + random.nextInt(30)); 
+                    robot.delay(releaseGap);
                     robot.keyRelease(targetKey);
-                    
-                    int sleepTime = getHumanizedDelay(baseDelay, useHumanizer);
+
+                    int remaining = Math.max(1, baseDelay - releaseGap);
+                    int sleepTime = getHumanizedDelay(remaining, useHumanizer);
                     Thread.sleep(sleepTime);
                 } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }

@@ -111,6 +111,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             d.put("shut_pending", new String[]{"Limit asildi! Bilgisayar %s icinde kapanacak.\nVazgecmek icin asagidaki butona basin.", "Limit reached! PC shuts down in %s.\nPress the button below to cancel.", "Limit erreicht! PC fährt in %s herunter.\nZum Abbrechen unten klicken.", "Limite atteinte! Arret dans %s.\nCliquez ci-dessous pour annuler.", "Limite raggiunto! Spegnimento tra %s.\nPremi sotto per annullare.", "Лимит достигнут! Выключение через %s.\nНажмите ниже для отмены."});
             d.put("shut_cancel_btn", new String[]{"Kapatmayi Iptal Et", "Cancel Shutdown", "Abbrechen", "Annuler l'arret", "Annulla spegnimento", "Отменить выключение"});
             d.put("shut_cancelled", new String[]{"Bilgisayar kapatma iptal edildi.", "Shutdown cancelled.", "Herunterfahren abgebrochen.", "Arret annule.", "Spegnimento annullato.", "Выключение отменено."});
+            d.put("lim_invalid", new String[]{"DURUM: GECERSIZ LIMIT DEGERI", "STATUS: INVALID LIMIT VALUE", "STATUS: UNGULTIGER LIMITWERT", "STATUT: LIMITE INVALIDE", "STATO: LIMITE NON VALIDO", "СТАТУС: НЕВЕРНЫЙ ЛИМИТ"});
             d.put("shut_fail", new String[]{"Kapatma komutu basarisiz oldu: ", "Shutdown command failed: ", "Herunterfahren fehlgeschlagen: ", "Echec de la commande d'arret: ", "Comando di spegnimento fallito: ", "Сбой команды выключения: "});
             d.put("shut_unsup", new String[]{"Bu isletim sisteminde otomatik kapatma desteklenmiyor: ", "Automatic shutdown not supported on this OS: ", "Automatisches Herunterfahren auf diesem OS nicht unterstützt: ", "Arret automatique non supporte sur cet OS: ", "Spegnimento automatico non supportato su questo OS: ", "Автовыключение не поддерживается в этой ОС: "});
         }
@@ -1080,6 +1081,22 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         workerThread = null;
     }
 
+    // Limitor aciksa deger pozitif tam sayi olmali; degilse alani kirmizi cerceveler ve false doner
+    private boolean validateLimitInput() {
+        if (!useLimitBox.isSelected()) {
+            limitValField.putClientProperty("JComponent.outline", null);
+            limitValField.repaint();
+            return true;
+        }
+        int v;
+        try { v = Integer.parseInt(limitValField.getText().trim()); } catch (Exception e) { v = -1; }
+        boolean ok = v > 0;
+        limitValField.putClientProperty("JComponent.outline", ok ? null : "error");
+        limitValField.repaint();
+        if (!ok) Toolkit.getDefaultToolkit().beep();
+        return ok;
+    }
+
     // ESC panik tusu: kosulsuz durdurma + sesli uyari (EDT'de calisir)
     private void stopFromPanic() {
         if (!isRunning) return;
@@ -1097,6 +1114,13 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         } else {
             // Eski worker hala canliysa once tamamen durdur (cift makro yarisini onler)
             stopWorker();
+
+            // Limitor aciksa gecersiz/0 deger ani durdurma/kapatma yapmasin
+            if (!validateLimitInput()) {
+                statusLabel.setText(Lang.get("lim_invalid"));
+                statusLabel.setForeground(new Color(255, 165, 0));
+                return;
+            }
 
             JTabbedPane tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
             int selectedTab = tabs.getSelectedIndex();

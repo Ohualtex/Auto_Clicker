@@ -1,5 +1,7 @@
 package com.ohualtex.autoclicker;
 
+import com.ohualtex.autoclicker.core.Humanizer;
+import com.ohualtex.autoclicker.core.ShutdownCommand;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.github.kwhat.jnativehook.GlobalScreen;
@@ -1027,11 +1029,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         isRunning = false;
         if(action == 1) { // bilgisayari kapat
             String os = System.getProperty("os.name").toLowerCase();
-            String[] cmd = null;
-            String delayLabel = null;
-            if (os.contains("win")) { cmd = new String[]{"shutdown", "-s", "-t", "15"}; delayLabel = "15 sn"; }
-            else if (os.contains("mac")) { cmd = new String[]{"shutdown", "-h", "+1"}; delayLabel = "1 dk"; }
-            else if (os.contains("nux") || os.contains("nix") || os.contains("aix")) { cmd = new String[]{"shutdown", "-h", "+1"}; delayLabel = "1 dk"; }
+            ShutdownCommand.Result sc = ShutdownCommand.forOs(os);
+            String[] cmd = sc.command;
+            String delayLabel = sc.delayLabel;
 
             if (cmd != null) {
                 final String label = delayLabel;
@@ -1295,11 +1295,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private int getHumanizedDelay(int baseDelay, boolean useHumanizer) {
-        if (!useHumanizer || baseDelay < 5) return Math.max(1, baseDelay);
-        int variance = (int)(baseDelay * 0.15); 
-        if (variance == 0) variance = 1;
-        int offset = random.nextInt(variance * 2) - variance;
-        return Math.max(1, baseDelay + offset);
+        return Humanizer.humanizedDelay(baseDelay, useHumanizer, random);
     }
 
     @Override

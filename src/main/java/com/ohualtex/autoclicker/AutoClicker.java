@@ -119,6 +119,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             d.put("sched_use", new String[]{"Gecikmeli baslat", "Delayed start", "Verzögerter Start", "Démarrage différé", "Avvio ritardato", "Запуск с задержкой"});
             d.put("sched_sec", new String[]{"saniye sonra", "seconds later", "Sekunden später", "secondes après", "secondi dopo", "секунд спустя"});
             d.put("sched_countdown", new String[]{"DURUM: BASLIYOR (%d sn)", "STATUS: STARTING (%d s)", "STATUS: START IN (%d s)", "STATUT: DEBUT (%d s)", "STATO: AVVIO (%d s)", "СТАТУС: СТАРТ (%d с)"});
+            d.put("tray_show", new String[]{"Goster", "Show", "Anzeigen", "Afficher", "Mostra", "Показать"});
+            d.put("tray_toggle", new String[]{"Baslat / Durdur", "Start / Stop", "Start / Stopp", "Demarrer / Arreter", "Avvia / Ferma", "Старт / Стоп"});
+            d.put("tray_exit", new String[]{"Cikis", "Exit", "Beenden", "Quitter", "Esci", "Выход"});
             d.put("shut_fail", new String[]{"Kapatma komutu basarisiz oldu: ", "Shutdown command failed: ", "Herunterfahren fehlgeschlagen: ", "Echec de la commande d'arret: ", "Comando di spegnimento fallito: ", "Сбой команды выключения: "});
             d.put("shut_unsup", new String[]{"Bu isletim sisteminde otomatik kapatma desteklenmiyor: ", "Automatic shutdown not supported on this OS: ", "Automatisches Herunterfahren auf diesem OS nicht unterstützt: ", "Arret automatique non supporte sur cet OS: ", "Spegnimento automatico non supportato su questo OS: ", "Автовыключение не поддерживается в этой ОС: "});
         }
@@ -230,6 +233,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private JTextField schedulerDelayField;
     private javax.swing.Timer scheduleTimer;
 
+    // System tray
+    private TrayIcon trayIcon;
+
     public AutoClicker() {
         try {
             robot = new Robot();
@@ -251,13 +257,61 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
         initUI();
         initJNativeHook();
-        
+        initTray();
+
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 saveConfig();
             }
         });
+    }
+
+    // Sistem tepsisi ikonu: simge durumuna kuculunce gizle, tray menusunden goster/baslat-durdur/cikis
+    private void initTray() {
+        if (!SystemTray.isSupported()) return;
+        try {
+            PopupMenu menu = new PopupMenu();
+            MenuItem showItem = new MenuItem(Lang.get("tray_show"));
+            showItem.addActionListener(e -> restoreFromTray());
+            MenuItem toggleItem = new MenuItem(Lang.get("tray_toggle"));
+            toggleItem.addActionListener(e -> SwingUtilities.invokeLater(this::toggle));
+            MenuItem exitItem = new MenuItem(Lang.get("tray_exit"));
+            exitItem.addActionListener(e -> { saveConfig(); System.exit(0); });
+            menu.add(showItem); menu.add(toggleItem); menu.addSeparator(); menu.add(exitItem);
+
+            trayIcon = new TrayIcon(buildTrayImage(), "AutoClicker", menu);
+            trayIcon.setImageAutoSize(true);
+            trayIcon.addActionListener(e -> restoreFromTray()); // cift tik
+            SystemTray.getSystemTray().add(trayIcon);
+
+            addWindowStateListener(e -> {
+                if ((e.getNewState() & JFrame.ICONIFIED) != 0) setVisible(false); // simge durumu -> tepsiye gizle
+            });
+        } catch (Exception ex) {
+            trayIcon = null;
+        }
+    }
+
+    private void restoreFromTray() {
+        SwingUtilities.invokeLater(() -> {
+            setVisible(true);
+            setExtendedState(JFrame.NORMAL);
+            toFront();
+            requestFocus();
+        });
+    }
+
+    private Image buildTrayImage() {
+        java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(16, 16, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = bi.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setColor(new Color(90, 160, 255));
+        g.fillOval(1, 1, 14, 14);
+        g.setColor(Color.WHITE);
+        g.fillOval(6, 6, 4, 4);
+        g.dispose();
+        return bi;
     }
 
     private void rebuildUI() {

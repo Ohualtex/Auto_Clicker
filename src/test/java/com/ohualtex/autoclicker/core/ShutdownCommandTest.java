@@ -11,6 +11,7 @@ class ShutdownCommandTest {
         ShutdownCommand.Result r = ShutdownCommand.forOs("Windows 11");
         assertTrue(r.isSupported());
         assertArrayEquals(new String[]{"shutdown", "-s", "-t", "15"}, r.command);
+        assertArrayEquals(new String[]{"shutdown", "-a"}, r.cancelCommand);
         assertEquals("15 sn", r.delayLabel);
     }
 

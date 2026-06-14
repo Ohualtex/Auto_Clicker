@@ -107,6 +107,10 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             d.put("info_title", new String[]{"Bilgi", "Info", "Info", "Info", "Info", "Информация"});
             d.put("reset", new String[]{"Sifirla", "Reset", "Zurücksetzen", "Réinit.", "Reimposta", "Сброс"});
             d.put("shut_ok", new String[]{"Limit asildi! Bilgisayar %s icinde kapatilacak.", "Limit reached! PC will shut down in %s.", "Limit erreicht! PC fährt in %s herunter.", "Limite atteinte! Le PC s'eteindra dans %s.", "Limite raggiunto! Il PC si spegnera tra %s.", "Лимит достигнут! ПК выключится через %s."});
+            d.put("shut_title", new String[]{"Bilgisayar Kapatiliyor", "Shutting Down", "Herunterfahren", "Arret du PC", "Spegnimento PC", "Выключение ПК"});
+            d.put("shut_pending", new String[]{"Limit asildi! Bilgisayar %s icinde kapanacak.\nVazgecmek icin asagidaki butona basin.", "Limit reached! PC shuts down in %s.\nPress the button below to cancel.", "Limit erreicht! PC fährt in %s herunter.\nZum Abbrechen unten klicken.", "Limite atteinte! Arret dans %s.\nCliquez ci-dessous pour annuler.", "Limite raggiunto! Spegnimento tra %s.\nPremi sotto per annullare.", "Лимит достигнут! Выключение через %s.\nНажмите ниже для отмены."});
+            d.put("shut_cancel_btn", new String[]{"Kapatmayi Iptal Et", "Cancel Shutdown", "Abbrechen", "Annuler l'arret", "Annulla spegnimento", "Отменить выключение"});
+            d.put("shut_cancelled", new String[]{"Bilgisayar kapatma iptal edildi.", "Shutdown cancelled.", "Herunterfahren abgebrochen.", "Arret annule.", "Spegnimento annullato.", "Выключение отменено."});
             d.put("shut_fail", new String[]{"Kapatma komutu basarisiz oldu: ", "Shutdown command failed: ", "Herunterfahren fehlgeschlagen: ", "Echec de la commande d'arret: ", "Comando di spegnimento fallito: ", "Сбой команды выключения: "});
             d.put("shut_unsup", new String[]{"Bu isletim sisteminde otomatik kapatma desteklenmiyor: ", "Automatic shutdown not supported on this OS: ", "Automatisches Herunterfahren auf diesem OS nicht unterstützt: ", "Arret automatique non supporte sur cet OS: ", "Spegnimento automatico non supportato su questo OS: ", "Автовыключение не поддерживается в этой ОС: "});
         }
@@ -1028,24 +1032,8 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private void executeLimitAction(int action) {
         isRunning = false;
         if(action == 1) { // bilgisayari kapat
-            String os = System.getProperty("os.name").toLowerCase();
-            ShutdownCommand.Result sc = ShutdownCommand.forOs(os);
-            String[] cmd = sc.command;
-            String delayLabel = sc.delayLabel;
-
-            if (cmd != null) {
-                final String label = delayLabel;
-                try {
-                    Runtime.getRuntime().exec(cmd);
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, String.format(Lang.get("shut_ok"), label)));
-                } catch (Exception e) {
-                    final String err = String.valueOf(e.getMessage());
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, Lang.get("shut_fail") + err));
-                }
-            } else {
-                final String osName = os;
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, Lang.get("shut_unsup") + osName));
-            }
+            ShutdownCommand.Result sc = ShutdownCommand.forOs(System.getProperty("os.name"));
+            SwingUtilities.invokeLater(() -> executeShutdownWithCancel(sc));
         } else {
             SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
         }
@@ -1053,6 +1041,33 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             statusLabel.setText(Lang.get("st_lim"));
             statusLabel.setForeground(new Color(255, 90, 90));
         });
+    }
+
+    // EDT'de: OS gecikmeli kapatmayi baslatir, gecikme penceresinde iptal sunar.
+    // AFK ise (kimse iptal etmezse) bilgisayar kapanir; kullanici varsa iptal edebilir.
+    private void executeShutdownWithCancel(ShutdownCommand.Result sc) {
+        if (sc == null || !sc.isSupported()) {
+            JOptionPane.showMessageDialog(this, Lang.get("shut_unsup") + System.getProperty("os.name"));
+            return;
+        }
+        try {
+            Runtime.getRuntime().exec(sc.command); // OS gecikmeli kapatma baslar
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, Lang.get("shut_fail") + e.getMessage());
+            return;
+        }
+        int sel = JOptionPane.showOptionDialog(this,
+            String.format(Lang.get("shut_pending"), sc.delayLabel),
+            Lang.get("shut_title"), JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,
+            null, new Object[]{ Lang.get("shut_cancel_btn") }, Lang.get("shut_cancel_btn"));
+        if (sel == 0 && sc.cancelCommand != null) {
+            try {
+                Runtime.getRuntime().exec(sc.cancelCommand);
+                JOptionPane.showMessageDialog(this, Lang.get("shut_cancelled"));
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, Lang.get("shut_fail") + e.getMessage());
+            }
+        }
     }
 
     private void stopWorker() {

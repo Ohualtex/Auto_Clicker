@@ -965,10 +965,14 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         slider.addChangeListener(e -> field.setText(String.valueOf(slider.getValue())));
         field.addKeyListener(new KeyAdapter() {
             public void keyReleased(KeyEvent e) {
+                boolean ok = false;
                 try {
-                    int val = Integer.parseInt(field.getText());
-                    if (val >= slider.getMinimum() && val <= max) slider.setValue(val);
-                } catch (Exception ex){}
+                    int val = Integer.parseInt(field.getText().trim());
+                    if (val >= slider.getMinimum() && val <= max) { slider.setValue(val); ok = true; }
+                } catch (Exception ex) { }
+                // Bos alan notr; gecersiz/araliga sigmayan deger kirmizi cerceve
+                field.putClientProperty("JComponent.outline", (ok || field.getText().trim().isEmpty()) ? null : "error");
+                field.repaint();
             }
         });
 

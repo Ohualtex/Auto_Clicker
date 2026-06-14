@@ -4,6 +4,11 @@ import com.ohualtex.autoclicker.core.ConfigPaths;
 import com.ohualtex.autoclicker.core.Humanizer;
 import com.ohualtex.autoclicker.core.MousePath;
 import com.ohualtex.autoclicker.core.ShutdownCommand;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.github.kwhat.jnativehook.GlobalScreen;
@@ -123,6 +128,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             d.put("tray_toggle", new String[]{"Baslat / Durdur", "Start / Stop", "Start / Stopp", "Demarrer / Arreter", "Avvia / Ferma", "Старт / Стоп"});
             d.put("tray_exit", new String[]{"Cikis", "Exit", "Beenden", "Quitter", "Esci", "Выход"});
             d.put("tabhk_title", new String[]{"(K) Sekme Kisayollari", "(K) Per-Tab Hotkeys", "(K) Tab-Hotkeys", "(K) Raccourcis par onglet", "(K) Tasti per scheda", "(K) Горячие клавиши вкладок"});
+            d.put("io_export", new String[]{"Disa Aktar (JSON)", "Export (JSON)", "Export (JSON)", "Exporter (JSON)", "Esporta (JSON)", "Экспорт (JSON)"});
+            d.put("io_import", new String[]{"Ice Aktar (JSON)", "Import (JSON)", "Import (JSON)", "Importer (JSON)", "Importa (JSON)", "Импорт (JSON)"});
+            d.put("io_fail", new String[]{"Dosya islemi basarisiz: ", "File operation failed: ", "Dateioperation fehlgeschlagen: ", "Echec du fichier: ", "Operazione file fallita: ", "Сбой работы с файлом: "});
             d.put("shut_fail", new String[]{"Kapatma komutu basarisiz oldu: ", "Shutdown command failed: ", "Herunterfahren fehlgeschlagen: ", "Echec de la commande d'arret: ", "Comando di spegnimento fallito: ", "Сбой команды выключения: "});
             d.put("shut_unsup", new String[]{"Bu isletim sisteminde otomatik kapatma desteklenmiyor: ", "Automatic shutdown not supported on this OS: ", "Automatisches Herunterfahren auf diesem OS nicht unterstützt: ", "Arret automatique non supporte sur cet OS: ", "Spegnimento automatico non supportato su questo OS: ", "Автовыключение не поддерживается в этой ОС: "});
         }
@@ -767,7 +775,18 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         rightPanel.add(remBtn);
         rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         rightPanel.add(clrBtn);
-        
+
+        JButton exportBtn = new JButton(Lang.get("io_export"));
+        JButton importBtn = new JButton(Lang.get("io_import"));
+        exportBtn.setMaximumSize(new Dimension(150, 35));
+        importBtn.setMaximumSize(new Dimension(150, 35));
+        exportBtn.addActionListener(e -> exportChain());
+        importBtn.addActionListener(e -> importChain());
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        rightPanel.add(exportBtn);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        rightPanel.add(importBtn);
+
         JPanel pAnti = new JPanel(new FlowLayout(FlowLayout.LEFT));
         chainHumanizerBox = new JCheckBox(Lang.get("anti_ban"));
         pAnti.add(chainHumanizerBox); pAnti.add(createInfoButton("info_hum"));
@@ -776,6 +795,56 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
         panel.add(rightPanel, BorderLayout.EAST);
         return panel;
+    }
+
+    // Zinciri JSON dosyasina aktarir
+    private void exportChain() {
+        if (chainModel.isEmpty()) { Toolkit.getDefaultToolkit().beep(); return; }
+        JFileChooser fc = new JFileChooser();
+        fc.setSelectedFile(new File("macro.json"));
+        if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        File f = fc.getSelectedFile();
+        if (!f.getName().toLowerCase().endsWith(".json")) f = new File(f.getParentFile(), f.getName() + ".json");
+
+        JsonArray arr = new JsonArray();
+        for (int i = 0; i < chainModel.getSize(); i++) {
+            MacroAction a = chainModel.get(i);
+            JsonObject o = new JsonObject();
+            o.addProperty("type", a.type.name());
+            o.addProperty("p1", a.p1);
+            o.addProperty("p2", a.p2);
+            arr.add(o);
+        }
+        JsonObject doc = new JsonObject();
+        doc.addProperty("app", "AutoClicker");
+        doc.addProperty("version", appVersion());
+        doc.add("actions", arr);
+
+        try (java.io.Writer w = new java.io.FileWriter(f)) {
+            new Gson().toJson(doc, w);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, Lang.get("io_fail") + ex.getMessage());
+        }
+    }
+
+    // JSON dosyasindan zincir yukler (mevcut listenin yerine)
+    private void importChain() {
+        JFileChooser fc = new JFileChooser();
+        if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        try (java.io.Reader r = new java.io.FileReader(fc.getSelectedFile())) {
+            JsonObject doc = JsonParser.parseReader(r).getAsJsonObject();
+            JsonArray arr = doc.getAsJsonArray("actions");
+            chainModel.clear();
+            for (JsonElement el : arr) {
+                JsonObject o = el.getAsJsonObject();
+                ActionType t = ActionType.valueOf(o.get("type").getAsString());
+                int p1 = o.get("p1").getAsInt();
+                int p2 = o.has("p2") ? o.get("p2").getAsInt() : 0;
+                chainModel.addElement(new MacroAction(t, p1, p2));
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, Lang.get("io_fail") + ex.getMessage());
+        }
     }
 
     private JPanel buildPixelPanel() {

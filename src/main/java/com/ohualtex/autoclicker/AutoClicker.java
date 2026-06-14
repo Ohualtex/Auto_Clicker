@@ -135,6 +135,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             d.put("prof_save", new String[]{"Kaydet", "Save", "Speichern", "Enregistrer", "Salva", "Сохранить"});
             d.put("prof_load", new String[]{"Yukle", "Load", "Laden", "Charger", "Carica", "Загрузить"});
             d.put("prof_del", new String[]{"Sil", "Delete", "Löschen", "Supprimer", "Elimina", "Удалить"});
+            d.put("rec_start", new String[]{"● Kaydet", "● Record", "● Aufnehmen", "● Enregistrer", "● Registra", "● Запись"});
+            d.put("rec_stop", new String[]{"■ Durdur (ESC)", "■ Stop (ESC)", "■ Stopp (ESC)", "■ Arreter (ESC)", "■ Ferma (ESC)", "■ Стоп (ESC)"});
+            d.put("rec_status", new String[]{"DURUM: KAYDEDILIYOR (ESC=dur)", "STATUS: RECORDING (ESC=stop)", "STATUS: AUFNAHME (ESC=stopp)", "STATUT: ENREGISTREMENT (ESC)", "STATO: REGISTRAZIONE (ESC)", "СТАТУС: ЗАПИСЬ (ESC=стоп)"});
             d.put("shut_fail", new String[]{"Kapatma komutu basarisiz oldu: ", "Shutdown command failed: ", "Herunterfahren fehlgeschlagen: ", "Echec de la commande d'arret: ", "Comando di spegnimento fallito: ", "Сбой команды выключения: "});
             d.put("shut_unsup", new String[]{"Bu isletim sisteminde otomatik kapatma desteklenmiyor: ", "Automatic shutdown not supported on this OS: ", "Automatisches Herunterfahren auf diesem OS nicht unterstützt: ", "Arret automatique non supporte sur cet OS: ", "Spegnimento automatico non supportato su questo OS: ", "Автовыключение не поддерживается в этой ОС: "});
         }
@@ -256,6 +259,11 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
     // Profiller
     private JComboBox<String> profileBox;
+
+    // Record/replay (gercek tiklama/tus kaydi -> zincire)
+    private volatile boolean recording = false;
+    private volatile long recordLastTime = 0L;
+    private JButton recordBtn;
 
     public AutoClicker() {
         try {
@@ -853,6 +861,13 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         rightPanel.add(importBtn);
 
+        recordBtn = new JButton(recording ? Lang.get("rec_stop") : Lang.get("rec_start"));
+        recordBtn.setMaximumSize(new Dimension(150, 35));
+        if (recording) recordBtn.setForeground(Color.RED);
+        recordBtn.addActionListener(e -> toggleRecording());
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        rightPanel.add(recordBtn);
+
         JPanel pAnti = new JPanel(new FlowLayout(FlowLayout.LEFT));
         chainHumanizerBox = new JCheckBox(Lang.get("anti_ban"));
         pAnti.add(chainHumanizerBox); pAnti.add(createInfoButton("info_hum"));
@@ -911,6 +926,39 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, Lang.get("io_fail") + ex.getMessage());
         }
+    }
+
+    // ---- Record/replay: gercek girdiyi zincire kaydeder ----
+    private void toggleRecording() {
+        if (recording) stopRecording(); else startRecording();
+    }
+
+    private void startRecording() {
+        recording = true;
+        recordLastTime = 0L;
+        if (recordBtn != null) { recordBtn.setText(Lang.get("rec_stop")); recordBtn.setForeground(Color.RED); }
+        statusLabel.setText(Lang.get("rec_status"));
+        statusLabel.setForeground(new Color(255, 80, 80));
+    }
+
+    private void stopRecording() {
+        recording = false;
+        if (recordBtn != null) { recordBtn.setText(Lang.get("rec_start")); recordBtn.setForeground(UIManager.getColor("Button.foreground")); }
+        statusLabel.setText(Lang.get("st_idle"));
+        statusLabel.setForeground(new Color(255, 90, 90));
+    }
+
+    // Bir onceki olaydan bu yana gecen sureyi DELAY olarak ekler (zamanlama korunur)
+    private void appendRecordedDelay() {
+        long now = System.currentTimeMillis();
+        if (recordLastTime != 0L) {
+            long delta = now - recordLastTime;
+            if (delta > 15 && delta < 600000) {
+                final int d = (int) delta;
+                SwingUtilities.invokeLater(() -> chainModel.addElement(new MacroAction(ActionType.DELAY, d, 0)));
+            }
+        }
+        recordLastTime = now;
     }
 
     private JPanel buildPixelPanel() {
@@ -1728,6 +1776,18 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
     @Override
     public void nativeKeyPressed(NativeKeyEvent ev) {
+        // Kayit modu: ESC kaydi durdurur, diger tuslar zincire eklenir
+        if (recording) {
+            if (ev.getKeyCode() == NativeKeyEvent.VC_ESCAPE) {
+                SwingUtilities.invokeLater(this::stopRecording);
+            } else {
+                appendRecordedDelay();
+                final int awt = ev.getRawCode(); // Windows VK ~ AWT KeyEvent VK kodlari
+                SwingUtilities.invokeLater(() -> chainModel.addElement(new MacroAction(ActionType.KEY_PRESS, awt, 0)));
+            }
+            return;
+        }
+
         // Her zaman acik ACIL DURDURMA (panik) tusu: ESC. Yapilandirilabilir hotkey'den bagimsizdir
         // ve degistirilemez; makro cok hizliyken garantili cikis saglar.
         if (ev.getKeyCode() == NativeKeyEvent.VC_ESCAPE) {
@@ -1824,7 +1884,20 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             });
         }
     }
-    @Override public void nativeMousePressed(NativeMouseEvent nativeMouseEvent) {}
+    @Override public void nativeMousePressed(NativeMouseEvent e) {
+        if (!recording) return;
+        appendRecordedDelay();
+        final Point p = MouseInfo.getPointerInfo().getLocation();
+        // JNativeHook buton -> AWT InputEvent maskesi (BUTTON2=sag, BUTTON3=orta farkina dikkat)
+        final int mask;
+        if (e.getButton() == NativeMouseEvent.BUTTON2) mask = InputEvent.BUTTON3_DOWN_MASK;      // sag
+        else if (e.getButton() == NativeMouseEvent.BUTTON3) mask = InputEvent.BUTTON2_DOWN_MASK; // orta
+        else mask = InputEvent.BUTTON1_DOWN_MASK;                                                 // sol
+        SwingUtilities.invokeLater(() -> {
+            chainModel.addElement(new MacroAction(ActionType.MOUSE_MOVE, p.x, p.y));
+            chainModel.addElement(new MacroAction(ActionType.MOUSE_CLICK, mask, 0));
+        });
+    }
     @Override public void nativeMouseReleased(NativeMouseEvent nativeMouseEvent) {}
 
     /** Surum bilgisini JAR manifest'inden (pom version) okur; IDE/class'tan calistirinca 'dev'. */

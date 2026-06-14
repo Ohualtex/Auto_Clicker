@@ -131,6 +131,10 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             d.put("io_export", new String[]{"Disa Aktar (JSON)", "Export (JSON)", "Export (JSON)", "Exporter (JSON)", "Esporta (JSON)", "Экспорт (JSON)"});
             d.put("io_import", new String[]{"Ice Aktar (JSON)", "Import (JSON)", "Import (JSON)", "Importer (JSON)", "Importa (JSON)", "Импорт (JSON)"});
             d.put("io_fail", new String[]{"Dosya islemi basarisiz: ", "File operation failed: ", "Dateioperation fehlgeschlagen: ", "Echec du fichier: ", "Operazione file fallita: ", "Сбой работы с файлом: "});
+            d.put("prof_title", new String[]{"(P) Profiller", "(P) Profiles", "(P) Profile", "(P) Profils", "(P) Profili", "(P) Профили"});
+            d.put("prof_save", new String[]{"Kaydet", "Save", "Speichern", "Enregistrer", "Salva", "Сохранить"});
+            d.put("prof_load", new String[]{"Yukle", "Load", "Laden", "Charger", "Carica", "Загрузить"});
+            d.put("prof_del", new String[]{"Sil", "Delete", "Löschen", "Supprimer", "Elimina", "Удалить"});
             d.put("shut_fail", new String[]{"Kapatma komutu basarisiz oldu: ", "Shutdown command failed: ", "Herunterfahren fehlgeschlagen: ", "Echec de la commande d'arret: ", "Comando di spegnimento fallito: ", "Сбой команды выключения: "});
             d.put("shut_unsup", new String[]{"Bu isletim sisteminde otomatik kapatma desteklenmiyor: ", "Automatic shutdown not supported on this OS: ", "Automatisches Herunterfahren auf diesem OS nicht unterstützt: ", "Arret automatique non supporte sur cet OS: ", "Spegnimento automatico non supportato su questo OS: ", "Автовыключение не поддерживается в этой ОС: "});
         }
@@ -249,6 +253,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private final int[] tabHotkey = new int[4];
     private final JButton[] tabHotkeyBtns = new JButton[4];
     private volatile int listeningForTabHotkey = -1;
+
+    // Profiller
+    private JComboBox<String> profileBox;
 
     public AutoClicker() {
         try {
@@ -496,7 +503,66 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private void saveConfig() {
-        try (FileOutputStream fos = new FileOutputStream(configFile)) {
+        writeConfigTo(configFile);
+    }
+
+    // ---- Profiller (config dizininde profile-<ad>.properties) ----
+    private String sanitizeName(String n) {
+        return n.replaceAll("[^A-Za-z0-9_-]", "_");
+    }
+
+    private File profileFile(String name) {
+        return new File(configFile.getParentFile(), "profile-" + sanitizeName(name) + ".properties");
+    }
+
+    private String[] listProfiles() {
+        File dir = configFile.getParentFile();
+        File[] fs = (dir != null) ? dir.listFiles((d, n) -> n.startsWith("profile-") && n.endsWith(".properties")) : null;
+        if (fs == null) return new String[0];
+        java.util.List<String> names = new java.util.ArrayList<>();
+        for (File f : fs) {
+            String n = f.getName();
+            names.add(n.substring("profile-".length(), n.length() - ".properties".length()));
+        }
+        java.util.Collections.sort(names);
+        return names.toArray(new String[0]);
+    }
+
+    private void saveProfile(String name) {
+        writeConfigTo(profileFile(name)); // mevcut UI durumu props'a yazilip profile dosyasina kaydedilir
+    }
+
+    private void deleteProfile(String name) {
+        File f = profileFile(name);
+        if (f.exists()) f.delete();
+    }
+
+    private void loadProfile(String name) {
+        File pf = profileFile(name);
+        if (!pf.exists()) return;
+        Properties np = new Properties();
+        try (FileInputStream fis = new FileInputStream(pf)) { np.load(fis); }
+        catch (Exception e) { return; }
+        this.props = np;
+        triggerKey = Integer.parseInt(props.getProperty("hotkey", String.valueOf(NativeKeyEvent.VC_F6)));
+        Lang.L = Integer.parseInt(props.getProperty("langIndex", "0"));
+        // UI'yi yeni profile gore tamamen yeniden kur (tema/dil/renk dahil)
+        getContentPane().removeAll();
+        applyInitialTheme();
+        initUI();
+        revalidate();
+        repaint();
+        saveConfig(); // aktif config'i yuklenen profile esitle
+    }
+
+    private void refreshProfiles(String selectName) {
+        if (profileBox == null) return;
+        profileBox.setModel(new DefaultComboBoxModel<>(listProfiles()));
+        if (selectName != null) profileBox.setSelectedItem(selectName);
+    }
+
+    private void writeConfigTo(File target) {
+        try (FileOutputStream fos = new FileOutputStream(target)) {
             props.setProperty("hotkey", String.valueOf(triggerKey));
             
             props.setProperty("mouseCps", String.valueOf(mouseCpsSlider.getValue()));
@@ -1110,6 +1176,32 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             tabHkPanel.add(row);
         }
         panel.add(tabHkPanel);
+
+        // PROFILLER
+        JPanel profPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        profPanel.setBorder(BorderFactory.createTitledBorder(Lang.get("prof_title")));
+        profileBox = new JComboBox<>(listProfiles());
+        profileBox.setEditable(true);
+        profileBox.setPreferredSize(new Dimension(150, 28));
+        JButton saveProfBtn = new JButton(Lang.get("prof_save"));
+        JButton loadProfBtn = new JButton(Lang.get("prof_load"));
+        JButton delProfBtn = new JButton(Lang.get("prof_del"));
+        saveProfBtn.addActionListener(e -> {
+            String name = String.valueOf(profileBox.getEditor().getItem()).trim();
+            if (name.isEmpty()) { Toolkit.getDefaultToolkit().beep(); return; }
+            saveProfile(name);
+            refreshProfiles(name);
+        });
+        loadProfBtn.addActionListener(e -> {
+            Object sel = profileBox.getSelectedItem();
+            if (sel != null && !String.valueOf(sel).trim().isEmpty()) loadProfile(String.valueOf(sel).trim());
+        });
+        delProfBtn.addActionListener(e -> {
+            Object sel = profileBox.getSelectedItem();
+            if (sel != null && !String.valueOf(sel).trim().isEmpty()) { deleteProfile(String.valueOf(sel).trim()); refreshProfiles(null); }
+        });
+        profPanel.add(profileBox); profPanel.add(saveProfBtn); profPanel.add(loadProfBtn); profPanel.add(delProfBtn);
+        panel.add(profPanel);
 
         // UI STYLE PANEL V5.1
         JPanel stylePanel = new JPanel();

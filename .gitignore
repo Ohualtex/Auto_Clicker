@@ -11,6 +11,7 @@ build/
 out/
 bin/
 target/
+dist/
 
 # ────────────────────────────────────────
 # Runtime config (config.properties vb.)

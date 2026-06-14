@@ -1065,6 +1065,15 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         workerThread = null;
     }
 
+    // ESC panik tusu: kosulsuz durdurma + sesli uyari (EDT'de calisir)
+    private void stopFromPanic() {
+        if (!isRunning) return;
+        stopWorker();
+        statusLabel.setText(Lang.get("st_idle"));
+        statusLabel.setForeground(new Color(255, 90, 90));
+        Toolkit.getDefaultToolkit().beep();
+    }
+
     private void toggle() {
         if (isRunning) {
             stopWorker();
@@ -1300,6 +1309,13 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
     @Override
     public void nativeKeyPressed(NativeKeyEvent ev) {
+        // Her zaman acik ACIL DURDURMA (panik) tusu: ESC. Yapilandirilabilir hotkey'den bagimsizdir
+        // ve degistirilemez; makro cok hizliyken garantili cikis saglar.
+        if (ev.getKeyCode() == NativeKeyEvent.VC_ESCAPE) {
+            if (isRunning) SwingUtilities.invokeLater(this::stopFromPanic);
+            return; // ESC asla hotkey olarak atanmaz / toggle tetiklemez
+        }
+
         if (listeningForHotkey) {
             triggerKey = ev.getKeyCode();
             listeningForHotkey = false;

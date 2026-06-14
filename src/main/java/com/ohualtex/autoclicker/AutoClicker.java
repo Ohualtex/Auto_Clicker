@@ -211,7 +211,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         Lang.L = Integer.parseInt(props.getProperty("langIndex", "0"));
         applyInitialTheme();
 
-        setTitle("AutoClicker Ultimate v6.1");
+        setTitle("AutoClicker Ultimate v" + appVersion());
         setSize(600, 780);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -1366,6 +1366,12 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
     @Override public void nativeMousePressed(NativeMouseEvent nativeMouseEvent) {}
     @Override public void nativeMouseReleased(NativeMouseEvent nativeMouseEvent) {}
+
+    /** Surum bilgisini JAR manifest'inden (pom version) okur; IDE/class'tan calistirinca 'dev'. */
+    private static String appVersion() {
+        String v = AutoClicker.class.getPackage().getImplementationVersion();
+        return (v != null) ? v : "dev";
+    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new AutoClicker().setVisible(true));

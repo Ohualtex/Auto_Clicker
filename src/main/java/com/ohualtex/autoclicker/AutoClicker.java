@@ -1,5 +1,6 @@
 package com.ohualtex.autoclicker;
 
+import com.ohualtex.autoclicker.core.ConfigPaths;
 import com.ohualtex.autoclicker.core.Humanizer;
 import com.ohualtex.autoclicker.core.ShutdownCommand;
 import com.formdev.flatlaf.FlatDarkLaf;
@@ -15,6 +16,7 @@ import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Properties;
@@ -140,7 +142,22 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         }
     }
 
-    private final String CONFIG_FILE = "config.properties";
+    private final File configFile = resolveConfigFile();
+
+    // Config'i yazilabilir kullanici dizinine koyar (installer/Program Files uyumu).
+    // Eski CWD config.properties varsa bir kez tasir (geriye uyum).
+    private static File resolveConfigFile() {
+        String dirPath = ConfigPaths.configDir(
+            System.getProperty("os.name"), System.getenv("APPDATA"), System.getProperty("user.home"));
+        File dir = new File(dirPath);
+        try { dir.mkdirs(); } catch (Exception ignore) {}
+        File f = new File(dir, "config.properties");
+        File legacy = new File("config.properties");
+        if (!f.exists() && legacy.exists()) {
+            try { java.nio.file.Files.copy(legacy.toPath(), f.toPath()); } catch (Exception ignore) {}
+        }
+        return f;
+    }
     private Properties props = new Properties();
 
     private volatile int triggerKey = NativeKeyEvent.VC_F6;
@@ -389,7 +406,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private void loadConfig() {
-        try (FileInputStream fis = new FileInputStream(CONFIG_FILE)) {
+        try (FileInputStream fis = new FileInputStream(configFile)) {
             props.load(fis);
             triggerKey = Integer.parseInt(props.getProperty("hotkey", String.valueOf(NativeKeyEvent.VC_F6)));
         } catch (Exception e) {
@@ -401,7 +418,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private void saveConfig() {
-        try (FileOutputStream fos = new FileOutputStream(CONFIG_FILE)) {
+        try (FileOutputStream fos = new FileOutputStream(configFile)) {
             props.setProperty("hotkey", String.valueOf(triggerKey));
             
             props.setProperty("mouseCps", String.valueOf(mouseCpsSlider.getValue()));

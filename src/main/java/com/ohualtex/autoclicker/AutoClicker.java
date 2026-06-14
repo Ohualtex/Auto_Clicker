@@ -115,6 +115,10 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             d.put("shut_cancel_btn", new String[]{"Kapatmayi Iptal Et", "Cancel Shutdown", "Abbrechen", "Annuler l'arret", "Annulla spegnimento", "Отменить выключение"});
             d.put("shut_cancelled", new String[]{"Bilgisayar kapatma iptal edildi.", "Shutdown cancelled.", "Herunterfahren abgebrochen.", "Arret annule.", "Spegnimento annullato.", "Выключение отменено."});
             d.put("lim_invalid", new String[]{"DURUM: GECERSIZ LIMIT DEGERI", "STATUS: INVALID LIMIT VALUE", "STATUS: UNGULTIGER LIMITWERT", "STATUT: LIMITE INVALIDE", "STATO: LIMITE NON VALIDO", "СТАТУС: НЕВЕРНЫЙ ЛИМИТ"});
+            d.put("sched_title", new String[]{"(Z) Zamanlayici", "(Z) Scheduler", "(Z) Zeitplaner", "(Z) Planificateur", "(Z) Pianificatore", "(Z) Планировщик"});
+            d.put("sched_use", new String[]{"Gecikmeli baslat", "Delayed start", "Verzögerter Start", "Démarrage différé", "Avvio ritardato", "Запуск с задержкой"});
+            d.put("sched_sec", new String[]{"saniye sonra", "seconds later", "Sekunden später", "secondes après", "secondi dopo", "секунд спустя"});
+            d.put("sched_countdown", new String[]{"DURUM: BASLIYOR (%d sn)", "STATUS: STARTING (%d s)", "STATUS: START IN (%d s)", "STATUT: DEBUT (%d s)", "STATO: AVVIO (%d s)", "СТАТУС: СТАРТ (%d с)"});
             d.put("shut_fail", new String[]{"Kapatma komutu basarisiz oldu: ", "Shutdown command failed: ", "Herunterfahren fehlgeschlagen: ", "Echec de la commande d'arret: ", "Comando di spegnimento fallito: ", "Сбой команды выключения: "});
             d.put("shut_unsup", new String[]{"Bu isletim sisteminde otomatik kapatma desteklenmiyor: ", "Automatic shutdown not supported on this OS: ", "Automatisches Herunterfahren auf diesem OS nicht unterstützt: ", "Arret automatique non supporte sur cet OS: ", "Spegnimento automatico non supportato su questo OS: ", "Автовыключение не поддерживается в этой ОС: "});
         }
@@ -220,6 +224,11 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private JSlider fontSlider;
     private JPanel customColorPreview;
     private JComboBox<String> langBox;
+
+    // Scheduler (gecikmeli baslat)
+    private JCheckBox schedulerBox;
+    private JTextField schedulerDelayField;
+    private javax.swing.Timer scheduleTimer;
 
     public AutoClicker() {
         try {
@@ -473,6 +482,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             
             props.setProperty("langIndex", String.valueOf(langBox.getSelectedIndex()));
 
+            props.setProperty("schedUse", String.valueOf(schedulerBox.isSelected()));
+            props.setProperty("schedDelay", schedulerDelayField.getText());
+
             props.store(fos, "AutoClicker Configuration");
         } catch (Exception e) {
             System.err.println("[AutoClicker] Config kaydedilemedi: " + e.getMessage());
@@ -564,6 +576,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             fontSlider.setValue(Integer.parseInt(props.getProperty("fontSize", "14")));
             if(props.containsKey("fontColor")) customColorPreview.setBackground(new Color(Integer.parseInt(props.getProperty("fontColor"))));
             langBox.setSelectedIndex(Integer.parseInt(props.getProperty("langIndex", "0")));
+
+            schedulerBox.setSelected(Boolean.parseBoolean(props.getProperty("schedUse", "false")));
+            schedulerDelayField.setText(props.getProperty("schedDelay", "5"));
 
         } catch (Exception e) {
             System.err.println("[AutoClicker] Config UI'ye uygulanamadi: " + e.getMessage());
@@ -917,6 +932,16 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         limitPanel.add(p1); limitPanel.add(p2); limitPanel.add(p3);
         panel.add(limitPanel);
 
+        // SCHEDULER (gecikmeli baslat)
+        JPanel schedPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        schedPanel.setBorder(BorderFactory.createTitledBorder(Lang.get("sched_title")));
+        schedulerBox = new JCheckBox(Lang.get("sched_use"));
+        schedulerDelayField = new JTextField("5", 4);
+        schedPanel.add(schedulerBox);
+        schedPanel.add(schedulerDelayField);
+        schedPanel.add(new JLabel(Lang.get("sched_sec")));
+        panel.add(schedPanel);
+
         // UI STYLE PANEL V5.1
         JPanel stylePanel = new JPanel();
         stylePanel.setLayout(new BoxLayout(stylePanel, BoxLayout.Y_AXIS));
@@ -1129,39 +1154,90 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private void toggle() {
+        // Zamanlayici geri sayimi devam ediyorsa hotkey iptal eder
+        if (scheduleTimer != null) {
+            scheduleTimer.stop();
+            scheduleTimer = null;
+            statusLabel.setText(Lang.get("st_idle"));
+            statusLabel.setForeground(new Color(255, 90, 90));
+            return;
+        }
+
         if (isRunning) {
             stopWorker();
             statusLabel.setText(Lang.get("st_idle"));
             statusLabel.setForeground(new Color(255, 90, 90));
-        } else {
-            // Eski worker hala canliysa once tamamen durdur (cift makro yarisini onler)
-            stopWorker();
-
-            // Limitor aciksa gecersiz/0 deger ani durdurma/kapatma yapmasin
-            if (!validateLimitInput()) {
-                statusLabel.setText(Lang.get("lim_invalid"));
-                statusLabel.setForeground(new Color(255, 165, 0));
-                return;
-            }
-
-            JTabbedPane tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
-            int selectedTab = tabs.getSelectedIndex();
-
-            boolean started;
-            if (selectedTab == 0) started = startMouseMacro();
-            else if (selectedTab == 1) started = startKeyMacro();
-            else if (selectedTab == 2) started = startChainMacro();
-            else if (selectedTab == 3) started = startPixelMacro();
-            else return;
-
-            if (started) {
-                statusLabel.setText(Lang.get("st_run"));
-                statusLabel.setForeground(new Color(90, 255, 90));
-            } else {
-                statusLabel.setText(Lang.get("st_idle"));
-                statusLabel.setForeground(new Color(255, 90, 90));
-            }
+            return;
         }
+
+        // Eski worker hala canliysa once tamamen durdur (cift makro yarisini onler)
+        stopWorker();
+
+        // Limitor aciksa gecersiz/0 deger ani durdurma/kapatma yapmasin
+        if (!validateLimitInput()) {
+            statusLabel.setText(Lang.get("lim_invalid"));
+            statusLabel.setForeground(new Color(255, 165, 0));
+            return;
+        }
+
+        // Zamanlayici aciksa once geri sayim
+        int delaySec = schedulerDelaySeconds();
+        if (delaySec > 0) {
+            startScheduledCountdown(delaySec);
+            return;
+        }
+
+        startActiveTab();
+    }
+
+    // Aktif sekmenin makrosunu baslatir ve durumu gunceller (toggle ve zamanlayici kullanir)
+    private void startActiveTab() {
+        JTabbedPane tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
+        int selectedTab = tabs.getSelectedIndex();
+
+        boolean started;
+        if (selectedTab == 0) started = startMouseMacro();
+        else if (selectedTab == 1) started = startKeyMacro();
+        else if (selectedTab == 2) started = startChainMacro();
+        else if (selectedTab == 3) started = startPixelMacro();
+        else return;
+
+        if (started) {
+            statusLabel.setText(Lang.get("st_run"));
+            statusLabel.setForeground(new Color(90, 255, 90));
+        } else {
+            statusLabel.setText(Lang.get("st_idle"));
+            statusLabel.setForeground(new Color(255, 90, 90));
+        }
+    }
+
+    // Zamanlayici acik ve gecerli pozitif deger ise saniye, aksi halde 0
+    private int schedulerDelaySeconds() {
+        if (schedulerBox == null || !schedulerBox.isSelected()) return 0;
+        try {
+            int s = Integer.parseInt(schedulerDelayField.getText().trim());
+            return s > 0 ? s : 0;
+        } catch (Exception e) { return 0; }
+    }
+
+    // Geri sayim sonunda aktif sekme makrosunu baslatir (EDT Swing Timer)
+    private void startScheduledCountdown(int totalSec) {
+        final int[] remaining = { totalSec };
+        statusLabel.setForeground(new Color(255, 165, 0));
+        statusLabel.setText(String.format(Lang.get("sched_countdown"), remaining[0]));
+        scheduleTimer = new javax.swing.Timer(1000, null);
+        scheduleTimer.addActionListener(e -> {
+            remaining[0]--;
+            if (remaining[0] <= 0) {
+                scheduleTimer.stop();
+                scheduleTimer = null;
+                startActiveTab();
+            } else {
+                statusLabel.setText(String.format(Lang.get("sched_countdown"), remaining[0]));
+            }
+        });
+        scheduleTimer.setInitialDelay(1000);
+        scheduleTimer.start();
     }
 
     private boolean startMouseMacro() {

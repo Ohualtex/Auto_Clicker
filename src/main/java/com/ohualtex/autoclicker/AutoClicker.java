@@ -2,6 +2,7 @@ package com.ohualtex.autoclicker;
 
 import com.ohualtex.autoclicker.core.ConfigPaths;
 import com.ohualtex.autoclicker.core.Humanizer;
+import com.ohualtex.autoclicker.core.MousePath;
 import com.ohualtex.autoclicker.core.ShutdownCommand;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
@@ -1281,7 +1282,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                                 robot.keyRelease(action.p1);
                                 break;
                             case MOUSE_MOVE:
-                                robot.mouseMove(action.p1, action.p2);
+                                smoothMove(action.p1, action.p2);
                                 break;
                             case DELAY:
                                 int sleepTime = getHumanizedDelay(action.p1, useHumanizer);
@@ -1361,6 +1362,16 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private void doMouseClick(int mask) {
         robot.mousePress(mask);
         robot.mouseRelease(mask);
+    }
+
+    // Mevcut konumdan (x,y)'ye insan benzeri egriyle hareket (zincir "Fareyi Tasi" icin)
+    private void smoothMove(int x, int y) {
+        Point cur = MouseInfo.getPointerInfo().getLocation();
+        int steps = MousePath.stepsFor(cur.x, cur.y, x, y);
+        for (Point p : MousePath.interpolate(cur.x, cur.y, x, y, steps)) {
+            robot.mouseMove(p.x, p.y);
+            robot.delay(2);
+        }
     }
 
     private int getHumanizedDelay(int baseDelay, boolean useHumanizer) {

@@ -44,7 +44,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             d.put("pick_loc", new String[]{"Konum Sec", "Pick Loc", "Wählen", "Choisir", "Seleziona", "Выбрать"});
             d.put("wait_mid", new String[]{"Bekliyor (Orta Tik)", "Waiting (Mid Click)", "Wartet (Mittelklick)", "Attente (Milieu)", "Attesa (Centrale)", "Ожидание (Ср. клик)"});
             
-            d.put("anti_ban", new String[]{"Insan Modu (Rastgelemsi Gecikme)", "Humanizer (Random Delay)", "Menschenmodus (Zufall)", "Mode Humain (Délais Aléat.)", "Modalità Umana (Ritardo)", "Анти-Бан"});
+            d.put("anti_ban", new String[]{"Insan Modu (Rastgele Gecikme)", "Humanizer (Random Delay)", "Menschenmodus (Zufall)", "Mode Humain (Délais Aléat.)", "Modalità Umana (Ritardo)", "Анти-Бан (случайная задержка)"});
             d.put("cps", new String[]{"Fare Hizi (CPS):", "Mouse Speed (CPS):", "Maus-Geschw. (CPS):", "Vitesse Souris (CPS):", "Velocità Mouse (CPS):", "Скорость Мыши (CPS):"});
             d.put("key_cps", new String[]{"Klavye Hizi (Saniyede):", "Key Speed (/sec):", "Tasten-Geschw. (/s):", "Vitesse Touche (/s):", "Velocità Tasto (/s):", "Скор. Клавиатуры (/с):"});
             
@@ -95,10 +95,16 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             
             d.put("info_hum", new String[]{"Anti-Ban: Robotik tiklamalari saptirmak icin gecikmelere minik sapmalar ekler.", "Anti-Ban: Adds random fluctuations to delays to simulate human behavior and evade detection.", "Anti-Ban: Fügt den Verzögerungen zufällige Schwankungen hinzu.", "Anti-Ban: Ajoute des fluctuations aléatoires aux délais.", "Anti-Ban: Aggiunge fluttuazioni casuali ai ritardi.", "Анти-Бан: Добавляет случайные колебания к задержкам."});
             d.put("info_lim", new String[]{"Otomasyonu belirli bir sure sonra kapatir.", "Stops the automation automatically after a set time or cycle count. Ideal for AFK macros.", "Stoppt die Automatisierung automatisch nach einer Weile.", "Arrête automatiquement l'automatisation.", "Ferma l'automazione in base a limiti.", "Останавливает автоматизацию при достижении лимита."});
-            d.put("info_px", new String[]{"Renk Toleransi: Ufak golge farkliliklarinin renk algisini bozmasini engeller.", "Color Tolerance: Prevents minor in-game shading/lighting shifts from ruining detection.", "Farbtoleranz: Verhindert kleine Schattenfehler.", "Tolérance: Empêche les petits changements de lumière...", "Tolleranza: Evita che l'illuminazione rompa l'algoritmo.", "Допуск: Игнорирует изменения освещения."});
+            d.put("info_px", new String[]{"Renk Toleransi: Ufak golge farkliliklarinin renk algisini bozmasini engeller.", "Color Tolerance: Prevents minor in-game shading/lighting shifts from ruining detection.", "Farbtoleranz: Verhindert kleine Schattenfehler.", "Tolérance: Empêche les petits changements de lumière de fausser la détection.", "Tolleranza: Evita che l'illuminazione rompa l'algoritmo.", "Допуск: Игнорирует изменения освещения."});
             d.put("info_cps", new String[]{"Saniyedeki tiklama hizini belirler (Click Per Second).", "Sets the click speed per second (CPS).", "Legt die Klicks pro Sekunde fest.", "Définit la vitesse de clic (CPS).", "Imposta i clic al secondo (CPS).", "Устанавливает кликов в секунду (CPS)."});
             d.put("info_px_cond", new String[]{"Eslestiginde: Renk gorundugunde tepki verir.\nDegistiginde: Renk kayboldugunda tepki verir.", "Matches: Reacts when color appears.\nChanges: Reacts when color disappears.", "Stimmt überein: Reagiert, wenn die Farbe erscheint.", "Correspond: Agit quand la couleur apparait.", "Corrisponde: Agisce quando il colore appare.", "Совпадает: Реагирует на появление цвета."});
             d.put("info_px_rate", new String[]{"Tarama Hizi: Ekranin ne siklikla kontrol edilecegini belirler (Milisaniye).", "Scan Rate: How often to check the screen (Milliseconds).", "Scanrate: Wie oft der Bildschirm überprüft wird (ms).", "Taux de scan: Fréquence de vérification (ms).", "Velocità scan: Frequenza di controllo schermo (ms).", "Скорость: Частота проверки экрана (мс)."});
+
+            d.put("info_title", new String[]{"Bilgi", "Info", "Info", "Info", "Info", "Информация"});
+            d.put("reset", new String[]{"Sifirla", "Reset", "Zurücksetzen", "Réinit.", "Reimposta", "Сброс"});
+            d.put("shut_ok", new String[]{"Limit asildi! Bilgisayar %s icinde kapatilacak.", "Limit reached! PC will shut down in %s.", "Limit erreicht! PC fährt in %s herunter.", "Limite atteinte! Le PC s'eteindra dans %s.", "Limite raggiunto! Il PC si spegnera tra %s.", "Лимит достигнут! ПК выключится через %s."});
+            d.put("shut_fail", new String[]{"Kapatma komutu basarisiz oldu: ", "Shutdown command failed: ", "Herunterfahren fehlgeschlagen: ", "Echec de la commande d'arret: ", "Comando di spegnimento fallito: ", "Сбой команды выключения: "});
+            d.put("shut_unsup", new String[]{"Bu isletim sisteminde otomatik kapatma desteklenmiyor: ", "Automatic shutdown not supported on this OS: ", "Automatisches Herunterfahren auf diesem OS nicht unterstützt: ", "Arret automatique non supporte sur cet OS: ", "Spegnimento automatico non supportato su questo OS: ", "Автовыключение не поддерживается в этой ОС: "});
         }
         static String get(String key) { return d.containsKey(key) ? d.get(key)[L] : key; }
     }
@@ -128,10 +134,10 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private final String CONFIG_FILE = "config.properties";
     private Properties props = new Properties();
 
-    private int triggerKey = NativeKeyEvent.VC_F6; 
-    private boolean listeningForHotkey = false;
-    
-    private boolean isRunning = false;
+    private volatile int triggerKey = NativeKeyEvent.VC_F6;
+    private volatile boolean listeningForHotkey = false;
+
+    private volatile boolean isRunning = false;
     private Thread workerThread;
     private Robot robot;
     private Random random = new Random();
@@ -149,17 +155,15 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     // Mouse
     private JComboBox<String> mouseBtnBox;
     private JSlider mouseCpsSlider;
-    private JTextField mouseCpsField;
     private JCheckBox mouseHumanizerBox;
     private JCheckBox targetCoordBox;
     private JLabel coordLabel;
-    private Point targetPoint = null;
-    private boolean listeningForCoordParams = false;
+    private volatile Point targetPoint = null;
+    private volatile boolean listeningForCoordParams = false;
 
     // Keyboard
     private JTextField keyTargetField;
     private JSlider keyCpsSlider;
-    private JTextField keyCpsField;
     private JCheckBox keyHumanizerBox;
     private int selectedNativeKeyCode = KeyEvent.VK_SPACE;
 
@@ -167,22 +171,20 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private DefaultListModel<MacroAction> chainModel = new DefaultListModel<>();
     private JList<MacroAction> chainList;
     private JCheckBox chainHumanizerBox;
-    private boolean listeningForMacroCoord = false;
+    private volatile boolean listeningForMacroCoord = false;
     private JLabel macroCoordLblInfo;
-    private Point macroTempPt;
+    private volatile Point macroTempPt;
 
     // Pixel Trigger
-    private boolean listeningForPixelCoord = false;
-    private Point pixelPoint = null;
-    private Color pixelColor = null;
+    private volatile boolean listeningForPixelCoord = false;
+    private volatile Point pixelPoint = null;
+    private volatile Color pixelColor = null;
     private JLabel pixelCoordLbl;
     private JPanel pixelColorPreview;
     private JComboBox<String> pxConditionBox;
     private JComboBox<String> pxActionBox;
     private JSlider pxToleranceSlider;
-    private JTextField pxToleranceField;
     private JSlider pxRateSlider;
-    private JTextField pxRateField;
     private JTextField pxKeyField;
     private int pxSelectedKey = KeyEvent.VK_SPACE;
 
@@ -193,12 +195,19 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private JComboBox<String> langBox;
 
     public AutoClicker() {
-        try { robot = new Robot(); } catch (Exception e) {}
+        try {
+            robot = new Robot();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null,
+                "java.awt.Robot baslatilamadi; uygulama calisamaz.\n" + e.getMessage(),
+                "Kritik Hata", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+        }
         loadConfig();
         Lang.L = Integer.parseInt(props.getProperty("langIndex", "0"));
         applyInitialTheme();
 
-        setTitle("AutoClicker Ultimate v5.3");
+        setTitle("AutoClicker Ultimate v6.1");
         setSize(600, 780);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -299,7 +308,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setToolTipText("<html><p width=\"250\">" + Lang.get(tooltipKey) + "</p></html>");
-        btn.addActionListener(e -> JOptionPane.showMessageDialog(this, Lang.get(tooltipKey), "Bilgi / Info", JOptionPane.INFORMATION_MESSAGE));
+        btn.addActionListener(e -> JOptionPane.showMessageDialog(this, Lang.get(tooltipKey), Lang.get("info_title"), JOptionPane.INFORMATION_MESSAGE));
         return btn;
     }
 
@@ -374,7 +383,12 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         try (FileInputStream fis = new FileInputStream(CONFIG_FILE)) {
             props.load(fis);
             triggerKey = Integer.parseInt(props.getProperty("hotkey", String.valueOf(NativeKeyEvent.VC_F6)));
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            // Ilk acilista dosya yoklugu normaldir; digerlerini bildir
+            if (!(e instanceof java.io.FileNotFoundException)) {
+                System.err.println("[AutoClicker] Config okunamadi: " + e.getMessage());
+            }
+        }
     }
 
     private void saveConfig() {
@@ -384,7 +398,12 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             props.setProperty("mouseCps", String.valueOf(mouseCpsSlider.getValue()));
             props.setProperty("mouseBtn", String.valueOf(mouseBtnBox.getSelectedIndex()));
             props.setProperty("mouseHumanizer", String.valueOf(mouseHumanizerBox.isSelected()));
-            
+            props.setProperty("mouseUseCoord", String.valueOf(targetCoordBox.isSelected()));
+            if (targetPoint != null) {
+                props.setProperty("mouseTargetX", String.valueOf(targetPoint.x));
+                props.setProperty("mouseTargetY", String.valueOf(targetPoint.y));
+            }
+
             props.setProperty("keyCps", String.valueOf(keyCpsSlider.getValue()));
             props.setProperty("keyTargetCode", String.valueOf(selectedNativeKeyCode));
             props.setProperty("keyHumanizer", String.valueOf(keyHumanizerBox.isSelected()));
@@ -421,14 +440,16 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             if (!customColorPreview.getBackground().equals(Color.WHITE)) {
                 props.setProperty("fontColor", String.valueOf(customColorPreview.getBackground().getRGB()));
             } else {
-                props.remove("fontColor"); 
-                props.setProperty("fontColor", String.valueOf(customColorPreview.getBackground().getRGB()));
+                // WHITE = varsayilan: ozel renk anahtarini tamamen kaldir ki RESET gercekten varsayilana donsun
+                props.remove("fontColor");
             }
             
             props.setProperty("langIndex", String.valueOf(langBox.getSelectedIndex()));
 
             props.store(fos, "AutoClicker Configuration");
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.err.println("[AutoClicker] Config kaydedilemedi: " + e.getMessage());
+        }
     }
 
     private void initUI() {
@@ -465,8 +486,13 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             mouseCpsSlider.setValue(Integer.parseInt(props.getProperty("mouseCps", "10")));
             mouseBtnBox.setSelectedIndex(Integer.parseInt(props.getProperty("mouseBtn", "0")));
             mouseHumanizerBox.setSelected(Boolean.parseBoolean(props.getProperty("mouseHumanizer", "false")));
-            
-            keyCpsSlider.setValue(Integer.parseInt(props.getProperty("keyCps", "10")));
+            if (props.containsKey("mouseTargetX") && props.containsKey("mouseTargetY")) {
+                targetPoint = new Point(Integer.parseInt(props.getProperty("mouseTargetX")), Integer.parseInt(props.getProperty("mouseTargetY")));
+                coordLabel.setText("(X: " + targetPoint.x + ", Y: " + targetPoint.y + ")");
+            }
+            targetCoordBox.setSelected(Boolean.parseBoolean(props.getProperty("mouseUseCoord", "false")));
+
+            keyCpsSlider.setValue(Integer.parseInt(props.getProperty("keyCps", "5")));
             selectedNativeKeyCode = Integer.parseInt(props.getProperty("keyTargetCode", String.valueOf(KeyEvent.VK_SPACE)));
             keyTargetField.setText(KeyEvent.getKeyText(selectedNativeKeyCode));
             keyHumanizerBox.setSelected(Boolean.parseBoolean(props.getProperty("keyHumanizer", "false")));
@@ -488,14 +514,17 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             limitValField.setText(props.getProperty("limitVal", "60"));
             limitActionBox.setSelectedIndex(Integer.parseInt(props.getProperty("limitAction", "0")));
 
-            // px ui load
-            if(props.containsKey("pxX")) {
-                pixelPoint = new Point(Integer.parseInt(props.getProperty("pxX")), Integer.parseInt(props.getProperty("pxY")));
-                pixelColor = new Color(Integer.parseInt(props.getProperty("pxR")), Integer.parseInt(props.getProperty("pxG")), Integer.parseInt(props.getProperty("pxB")));
-                pixelCoordLbl.setText("X: " + pixelPoint.x + " Y: " + pixelPoint.y);
-                pixelColorPreview.setBackground(pixelColor);
-                pixelColorPreview.setToolTipText("RGB: " + pixelColor.getRed() + "," + pixelColor.getGreen() + "," + pixelColor.getBlue());
-            }
+            // px ui load (bozuk/eksik pixel config tum applyConfigToUI'yi kesmesin diye kendi try'inda)
+            try {
+                if (props.containsKey("pxX") && props.containsKey("pxY")
+                        && props.containsKey("pxR") && props.containsKey("pxG") && props.containsKey("pxB")) {
+                    pixelPoint = new Point(Integer.parseInt(props.getProperty("pxX")), Integer.parseInt(props.getProperty("pxY")));
+                    pixelColor = new Color(Integer.parseInt(props.getProperty("pxR")), Integer.parseInt(props.getProperty("pxG")), Integer.parseInt(props.getProperty("pxB")));
+                    pixelCoordLbl.setText("X: " + pixelPoint.x + " Y: " + pixelPoint.y);
+                    pixelColorPreview.setBackground(pixelColor);
+                    pixelColorPreview.setToolTipText("RGB: " + pixelColor.getRed() + "," + pixelColor.getGreen() + "," + pixelColor.getBlue());
+                }
+            } catch (Exception ex) { pixelPoint = null; pixelColor = null; }
             pxToleranceSlider.setValue(Integer.parseInt(props.getProperty("pxTolerance", "5")));
             pxRateSlider.setValue(Integer.parseInt(props.getProperty("pxRate", "100")));
             pxConditionBox.setSelectedIndex(Integer.parseInt(props.getProperty("pxCondition", "0")));
@@ -509,7 +538,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             if(props.containsKey("fontColor")) customColorPreview.setBackground(new Color(Integer.parseInt(props.getProperty("fontColor"))));
             langBox.setSelectedIndex(Integer.parseInt(props.getProperty("langIndex", "0")));
 
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            System.err.println("[AutoClicker] Config UI'ye uygulanamadi: " + e.getMessage());
+        }
     }
 
     private JPanel buildMousePanel() {
@@ -544,7 +575,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         humanizerPanel.add(createInfoButton("info_hum"));
         panel.add(humanizerPanel);
 
-        JPanel cpsPanel = createCpsPanel(Lang.get("cps"), "10", 100, "info_cps", slider -> mouseCpsSlider = slider, field -> mouseCpsField = field);
+        JPanel cpsPanel = createCpsPanel(Lang.get("cps"), "10", 100, "info_cps", slider -> mouseCpsSlider = slider);
         panel.add(cpsPanel);
 
         return panel;
@@ -585,7 +616,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         humanizerPanel.add(createInfoButton("info_hum"));
         panel.add(humanizerPanel);
 
-        JPanel cpsPanel = createCpsPanel(Lang.get("key_cps"), "5", 100, "info_cps", slider -> keyCpsSlider = slider, field -> keyCpsField = field);
+        JPanel cpsPanel = createCpsPanel(Lang.get("key_cps"), "5", 100, "info_cps", slider -> keyCpsSlider = slider);
         panel.add(cpsPanel);
 
         return panel;
@@ -666,7 +697,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         pCond.setBorder(BorderFactory.createTitledBorder(Lang.get("px_2")));
         pxConditionBox = new JComboBox<>(new String[]{Lang.get("px_cond1"), Lang.get("px_cond2")});
         
-        JPanel pTol = createCpsPanel(Lang.get("px_tol"), "5", 100, "info_px", slider -> pxToleranceSlider = slider, field -> pxToleranceField = field);
+        JPanel pTol = createCpsPanel(Lang.get("px_tol"), "5", 100, "info_px", slider -> pxToleranceSlider = slider);
         JPanel innerCond = new JPanel(new FlowLayout(FlowLayout.LEFT));
         innerCond.add(pxConditionBox); innerCond.add(createInfoButton("info_px_cond"));
         pCond.add(innerCond);
@@ -710,8 +741,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         JPanel pRate = createCpsPanel(Lang.get("px_rate"), "100", 2000, "info_px_rate", slider -> {
             pxRateSlider = slider;
             pxRateSlider.setMinimum(10);
-        }, field -> {
-            pxRateField = field;
         });
         panel.add(pRate);
 
@@ -723,6 +752,14 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         dialog.setSize(400, 260);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout());
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        // Dialog kapaninca bekleyen konum-secimini iptal et; kapali dialog'a yazimi onle
+        dialog.addWindowListener(new WindowAdapter() {
+            @Override public void windowClosed(WindowEvent e) {
+                listeningForMacroCoord = false;
+                macroCoordLblInfo = null;
+            }
+        });
 
         JPanel configPanel = new JPanel(new CardLayout());
         configPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -884,7 +921,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             if(chosen != null) customColorPreview.setBackground(chosen);
         });
         
-        JButton btnDefaultColor = new JButton("RESET");
+        JButton btnDefaultColor = new JButton(Lang.get("reset"));
         btnDefaultColor.addActionListener(e -> customColorPreview.setBackground(Color.WHITE));
 
         pCol.add(customColorPreview); pCol.add(customColorBtn); pCol.add(btnDefaultColor);
@@ -894,12 +931,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         JButton applyStyleBtn = new JButton(Lang.get("apply_s"));
         applyStyleBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
         applyStyleBtn.addActionListener(e -> {
-            boolean isDark = themeBox.getSelectedIndex() == 0;
-            int fSize = fontSlider.getValue();
-            Color fColor = null;
-            if(!customColorPreview.getBackground().equals(Color.WHITE)) {
-                fColor = customColorPreview.getBackground(); 
-            }
+            // saveConfig + rebuildUI zaten props/component'lerden okuyor; ara degiskenler gereksizdi
             saveConfig();
             rebuildUI();
         });
@@ -912,7 +944,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         return panel;
     }
 
-    private JPanel createCpsPanel(String title, String defaultVal, int max, String infoKey, java.util.function.Consumer<JSlider> setSlider, java.util.function.Consumer<JTextField> setField) {
+    private JPanel createCpsPanel(String title, String defaultVal, int max, String infoKey, java.util.function.Consumer<JSlider> setSlider) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createTitledBorder(title));
@@ -926,14 +958,13 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             public void keyReleased(KeyEvent e) {
                 try {
                     int val = Integer.parseInt(field.getText());
-                    if (val >= 1 && val <= max) slider.setValue(val);
+                    if (val >= slider.getMinimum() && val <= max) slider.setValue(val);
                 } catch (Exception ex){}
             }
         });
 
         setSlider.accept(slider);
-        setField.accept(field);
-        
+
         inputPanel.add(slider);
         inputPanel.add(field);
         if (infoKey != null) {
@@ -956,37 +987,63 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         } catch (NativeHookException e) {}
     }
 
-    private boolean checkLimits(long startTime, int iterationCount) {
-        if(!useLimitBox.isSelected() || !isRunning) return true; 
-        
-        try {
-            int limitVal = Integer.parseInt(limitValField.getText());
-            int type = limitTypeBox.getSelectedIndex();
-            
-            if (type == 0) { 
-                long elapsed = System.currentTimeMillis() - startTime;
-                if (elapsed >= (limitVal * 60000L)) {
-                    executeLimitAction();
-                    return false;
-                }
-            } else if (type == 1) { 
-                if (iterationCount >= limitVal) {
-                    executeLimitAction();
-                    return false;
-                }
-            }
-        } catch(Exception e) {}
-        return true; 
+    // Limit ayarlarinin worker thread'e gecirilecek anlik kopyasi (EDT-disi Swing erisimini onler)
+    static class LimitConfig {
+        final boolean enabled; final int type; final int value; final int action;
+        LimitConfig(boolean enabled, int type, int value, int action) {
+            this.enabled = enabled; this.type = type; this.value = value; this.action = action;
+        }
     }
 
-    private void executeLimitAction() {
+    // EDT'de cagrilmali: makro baslamadan once limit ayarlarini snapshot'lar
+    private LimitConfig snapshotLimits() {
+        int val;
+        try { val = Integer.parseInt(limitValField.getText()); } catch (Exception e) { val = 0; }
+        return new LimitConfig(useLimitBox.isSelected(), limitTypeBox.getSelectedIndex(), val, limitActionBox.getSelectedIndex());
+    }
+
+    private boolean checkLimits(LimitConfig cfg, long startTime, int iterationCount) {
+        if (cfg == null || !cfg.enabled || !isRunning) return true;
+
+        if (cfg.type == 0) {
+            long elapsed = System.currentTimeMillis() - startTime;
+            if (elapsed >= (cfg.value * 60000L)) {
+                executeLimitAction(cfg.action);
+                return false;
+            }
+        } else if (cfg.type == 1) {
+            // iteration kontrolden once 1-artiriliyor; tam cfg.value eylem icin > kullan (>= olunca N-1 olurdu)
+            if (iterationCount > cfg.value) {
+                executeLimitAction(cfg.action);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void executeLimitAction(int action) {
         isRunning = false;
-        int action = limitActionBox.getSelectedIndex();
-        if(action == 1) { 
-            try {
-                Runtime.getRuntime().exec("shutdown -s -t 15");
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, "SHUTDOWN IN 15 SECONDS!"));
-            } catch(Exception e) {}
+        if(action == 1) { // bilgisayari kapat
+            String os = System.getProperty("os.name").toLowerCase();
+            String[] cmd = null;
+            String delayLabel = null;
+            if (os.contains("win")) { cmd = new String[]{"shutdown", "-s", "-t", "15"}; delayLabel = "15 sn"; }
+            else if (os.contains("mac")) { cmd = new String[]{"shutdown", "-h", "+1"}; delayLabel = "1 dk"; }
+            else if (os.contains("nux") || os.contains("nix") || os.contains("aix")) { cmd = new String[]{"shutdown", "-h", "+1"}; delayLabel = "1 dk"; }
+
+            if (cmd != null) {
+                final String label = delayLabel;
+                try {
+                    Runtime.getRuntime().exec(cmd);
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, String.format(Lang.get("shut_ok"), label)));
+                } catch (Exception e) {
+                    final String err = String.valueOf(e.getMessage());
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, Lang.get("shut_fail") + err));
+                }
+            } else {
+                final String osName = os;
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, Lang.get("shut_unsup") + osName));
+            }
         } else {
             SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
         }
@@ -996,42 +1053,62 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         });
     }
 
+    private void stopWorker() {
+        isRunning = false;
+        Thread t = workerThread;
+        if (t != null && t.isAlive()) {
+            t.interrupt(); // bekleyen Thread.sleep'i uyandir
+            try { t.join(800); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        }
+        workerThread = null;
+    }
+
     private void toggle() {
         if (isRunning) {
-            isRunning = false;
+            stopWorker();
             statusLabel.setText(Lang.get("st_idle"));
             statusLabel.setForeground(new Color(255, 90, 90));
         } else {
+            // Eski worker hala canliysa once tamamen durdur (cift makro yarisini onler)
+            stopWorker();
+
             JTabbedPane tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
             int selectedTab = tabs.getSelectedIndex();
-            
-            if (selectedTab == 0) startMouseMacro();
-            else if (selectedTab == 1) startKeyMacro();
-            else if (selectedTab == 2) startChainMacro();
-            else if (selectedTab == 3) startPixelMacro();
+
+            boolean started;
+            if (selectedTab == 0) started = startMouseMacro();
+            else if (selectedTab == 1) started = startKeyMacro();
+            else if (selectedTab == 2) started = startChainMacro();
+            else if (selectedTab == 3) started = startPixelMacro();
             else return;
 
-            statusLabel.setText(Lang.get("st_run"));
-            statusLabel.setForeground(new Color(90, 255, 90));
+            if (started) {
+                statusLabel.setText(Lang.get("st_run"));
+                statusLabel.setForeground(new Color(90, 255, 90));
+            } else {
+                statusLabel.setText(Lang.get("st_idle"));
+                statusLabel.setForeground(new Color(255, 90, 90));
+            }
         }
     }
 
-    private void startMouseMacro() {
+    private boolean startMouseMacro() {
         int cps = mouseCpsSlider.getValue();
         int baseDelay = 1000 / Math.max(cps, 1);
         int mode = mouseBtnBox.getSelectedIndex(); 
         boolean useHumanizer = mouseHumanizerBox.isSelected();
         boolean useCoord = targetCoordBox.isSelected() && targetPoint != null;
-        
+        final LimitConfig limits = snapshotLimits();
+
         long startTime = System.currentTimeMillis();
-        
+
         isRunning = true;
         workerThread = new Thread(() -> {
             int iteration = 0;
             while (isRunning) {
                 iteration++;
-                if (!checkLimits(startTime, iteration)) break;
-                
+                if (!checkLimits(limits, startTime, iteration)) break;
+
                 try {
                     if (useCoord) {
                         robot.mouseMove(targetPoint.x, targetPoint.y);
@@ -1054,54 +1131,65 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             }
         });
         workerThread.start();
+        return true;
     }
-    
-    private void startKeyMacro() {
+
+    private boolean startKeyMacro() {
         int cps = keyCpsSlider.getValue();
         int baseDelay = Math.max(1, 1000 / cps);
         boolean useHumanizer = keyHumanizerBox.isSelected();
         final int targetKey = selectedNativeKeyCode;
+        final LimitConfig limits = snapshotLimits();
 
         long startTime = System.currentTimeMillis();
-        
+
         isRunning = true;
         workerThread = new Thread(() -> {
             int iteration = 0;
             while (isRunning) {
                 iteration++;
-                if (!checkLimits(startTime, iteration)) break;
-                
+                if (!checkLimits(limits, startTime, iteration)) break;
+
                 try {
+                    // press->release araligini kisa tut ve CPS butcesinden dus ki gercek hiz hedefe yapissin
+                    int releaseGap = Math.min(baseDelay / 2, 5 + random.nextInt(10));
+                    if (releaseGap < 2) releaseGap = 2;
                     robot.keyPress(targetKey);
-                    robot.delay(20 + random.nextInt(30)); 
+                    robot.delay(releaseGap);
                     robot.keyRelease(targetKey);
-                    
-                    int sleepTime = getHumanizedDelay(baseDelay, useHumanizer);
+
+                    int remaining = Math.max(1, baseDelay - releaseGap);
+                    int sleepTime = getHumanizedDelay(remaining, useHumanizer);
                     Thread.sleep(sleepTime);
                 } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
         });
         workerThread.start();
+        return true;
     }
 
-    private void startChainMacro() {
+    private boolean startChainMacro() {
         if (chainModel.isEmpty()) {
-            isRunning = false;
-            return;
+            SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
+            return false;
         }
 
         boolean useHumanizer = chainHumanizerBox.isSelected();
+        final LimitConfig limits = snapshotLimits();
+        // Worker thread'in DefaultListModel'a EDT-disi erismesini onlemek icin diziye snapshot al
+        final MacroAction[] actions = new MacroAction[chainModel.getSize()];
+        for (int i = 0; i < actions.length; i++) actions[i] = chainModel.get(i);
         long startTime = System.currentTimeMillis();
-        
+
         isRunning = true;
         workerThread = new Thread(() -> {
             int iteration = 0;
             while (isRunning) {
                 iteration++;
-                if (!checkLimits(startTime, iteration)) break;
-                
-                for (int i = 0; i < chainModel.getSize() && isRunning; i++) {
-                    MacroAction action = chainModel.get(i);
+                if (!checkLimits(limits, startTime, iteration)) break;
+
+                for (int i = 0; i < actions.length && isRunning; i++) {
+                    MacroAction action = actions[i];
                     final int idx = i;
                     SwingUtilities.invokeLater(() -> chainList.setSelectedIndex(idx)); 
 
@@ -1139,12 +1227,13 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             if (!isRunning) SwingUtilities.invokeLater(() -> chainList.clearSelection());
         });
         workerThread.start();
+        return true;
     }
 
-    private void startPixelMacro() {
+    private boolean startPixelMacro() {
         if (pixelPoint == null || pixelColor == null) {
-            isRunning = false;
-            return;
+            SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
+            return false;
         }
 
         int scanRate = pxRateSlider.getValue();
@@ -1152,15 +1241,16 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         int condition = pxConditionBox.getSelectedIndex();
         int action = pxActionBox.getSelectedIndex();
         int targetKey = pxSelectedKey;
+        final LimitConfig limits = snapshotLimits();
 
         long startTime = System.currentTimeMillis();
         isRunning = true;
-        
+
         workerThread = new Thread(() -> {
             int iteration = 0;
             while(isRunning) {
                 iteration++;
-                if (!checkLimits(startTime, iteration)) break;
+                if (!checkLimits(limits, startTime, iteration)) break;
                 
                 Color current = robot.getPixelColor(pixelPoint.x, pixelPoint.y);
                 boolean isMatch = colorDistance(pixelColor, current) <= (tolerancePercent * 4.4167);
@@ -1187,6 +1277,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             }
         });
         workerThread.start();
+        return true;
     }
 
     private double colorDistance(Color c1, Color c2) {
@@ -1253,7 +1344,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 if(macroCoordLblInfo != null) {
                     macroCoordLblInfo.setText("X: " + macroTempPt.x + " Y: " + macroTempPt.y);
                     macroCoordLblInfo.getParent().getComponent(0).setForeground(Color.GREEN);
-                    ((JButton)macroCoordLblInfo.getParent().getComponent(0)).setText("V");
+                    ((JButton)macroCoordLblInfo.getParent().getComponent(0)).setText("✔");
                 }
             });
         }
@@ -1270,7 +1361,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 pixelColorPreview.setToolTipText("RGB: " + c.getRed() + "," + c.getGreen() + "," + c.getBlue());
                 
                 JButton btn = (JButton)((JPanel)pixelCoordLbl.getParent()).getComponent(0);
-                btn.setText("V");
+                btn.setText("✔");
                 btn.setForeground(UIManager.getColor("Button.foreground"));
             });
         }

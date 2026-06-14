@@ -122,6 +122,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             d.put("tray_show", new String[]{"Goster", "Show", "Anzeigen", "Afficher", "Mostra", "Показать"});
             d.put("tray_toggle", new String[]{"Baslat / Durdur", "Start / Stop", "Start / Stopp", "Demarrer / Arreter", "Avvia / Ferma", "Старт / Стоп"});
             d.put("tray_exit", new String[]{"Cikis", "Exit", "Beenden", "Quitter", "Esci", "Выход"});
+            d.put("tabhk_title", new String[]{"(K) Sekme Kisayollari", "(K) Per-Tab Hotkeys", "(K) Tab-Hotkeys", "(K) Raccourcis par onglet", "(K) Tasti per scheda", "(K) Горячие клавиши вкладок"});
             d.put("shut_fail", new String[]{"Kapatma komutu basarisiz oldu: ", "Shutdown command failed: ", "Herunterfahren fehlgeschlagen: ", "Echec de la commande d'arret: ", "Comando di spegnimento fallito: ", "Сбой команды выключения: "});
             d.put("shut_unsup", new String[]{"Bu isletim sisteminde otomatik kapatma desteklenmiyor: ", "Automatic shutdown not supported on this OS: ", "Automatisches Herunterfahren auf diesem OS nicht unterstützt: ", "Arret automatique non supporte sur cet OS: ", "Spegnimento automatico non supportato su questo OS: ", "Автовыключение не поддерживается в этой ОС: "});
         }
@@ -235,6 +236,11 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
     // System tray
     private TrayIcon trayIcon;
+
+    // Per-sekme (per-makro) hotkey: 0=Fare 1=Klavye 2=Zincir 3=Piksel (0 = atanmamis)
+    private final int[] tabHotkey = new int[4];
+    private final JButton[] tabHotkeyBtns = new JButton[4];
+    private volatile int listeningForTabHotkey = -1;
 
     public AutoClicker() {
         try {
@@ -539,6 +545,10 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             props.setProperty("schedUse", String.valueOf(schedulerBox.isSelected()));
             props.setProperty("schedDelay", schedulerDelayField.getText());
 
+            for (int i = 0; i < tabHotkey.length; i++) {
+                props.setProperty("tabHotkey" + i, String.valueOf(tabHotkey[i]));
+            }
+
             props.store(fos, "AutoClicker Configuration");
         } catch (Exception e) {
             System.err.println("[AutoClicker] Config kaydedilemedi: " + e.getMessage());
@@ -633,6 +643,13 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
             schedulerBox.setSelected(Boolean.parseBoolean(props.getProperty("schedUse", "false")));
             schedulerDelayField.setText(props.getProperty("schedDelay", "5"));
+
+            for (int i = 0; i < tabHotkey.length; i++) {
+                tabHotkey[i] = Integer.parseInt(props.getProperty("tabHotkey" + i, "0"));
+                if (tabHotkeyBtns[i] != null) {
+                    tabHotkeyBtns[i].setText(tabHotkey[i] != 0 ? NativeKeyEvent.getKeyText(tabHotkey[i]) : "-");
+                }
+            }
 
         } catch (Exception e) {
             System.err.println("[AutoClicker] Config UI'ye uygulanamadi: " + e.getMessage());
@@ -996,6 +1013,35 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         schedPanel.add(new JLabel(Lang.get("sched_sec")));
         panel.add(schedPanel);
 
+        // PER-SEKME HOTKEY
+        JPanel tabHkPanel = new JPanel();
+        tabHkPanel.setLayout(new BoxLayout(tabHkPanel, BoxLayout.Y_AXIS));
+        tabHkPanel.setBorder(BorderFactory.createTitledBorder(Lang.get("tabhk_title")));
+        String[] tabKeys = { "t_mouse", "t_key", "t_chain", "t_px" };
+        for (int i = 0; i < 4; i++) {
+            final int idx = i;
+            JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            row.add(new JLabel(Lang.get(tabKeys[i]) + ": "));
+            JButton b = new JButton(tabHotkey[i] != 0 ? NativeKeyEvent.getKeyText(tabHotkey[i]) : "-");
+            b.addActionListener(e -> {
+                listeningForTabHotkey = idx;
+                b.setText(Lang.get("press_k"));
+                b.setForeground(Color.RED);
+            });
+            tabHotkeyBtns[i] = b;
+            row.add(b);
+            JButton clr = new JButton("x");
+            clr.addActionListener(e -> {
+                tabHotkey[idx] = 0;
+                b.setText("-");
+                b.setForeground(UIManager.getColor("Button.foreground"));
+                saveConfig();
+            });
+            row.add(clr);
+            tabHkPanel.add(row);
+        }
+        panel.add(tabHkPanel);
+
         // UI STYLE PANEL V5.1
         JPanel stylePanel = new JPanel();
         stylePanel.setLayout(new BoxLayout(stylePanel, BoxLayout.Y_AXIS));
@@ -1265,6 +1311,17 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         }
     }
 
+    // Per-sekme hotkey: idle ise i. sekmeye gecip baslatir; calisirken/sayimda durdurur
+    private void startTab(int index) {
+        SwingUtilities.invokeLater(() -> {
+            if (scheduleTimer != null || isRunning) { toggle(); return; }
+            JTabbedPane tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
+            if (tabs == null || index < 0 || index >= 4) return;
+            tabs.setSelectedIndex(index);
+            toggle();
+        });
+    }
+
     // Zamanlayici acik ve gecerli pozitif deger ise saniye, aksi halde 0
     private int schedulerDelaySeconds() {
         if (schedulerBox == null || !schedulerBox.isSelected()) return 0;
@@ -1526,6 +1583,31 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 saveConfig();
             });
             return;
+        }
+
+        // Per-sekme hotkey atama modu
+        if (listeningForTabHotkey >= 0) {
+            final int idx = listeningForTabHotkey;
+            tabHotkey[idx] = ev.getKeyCode();
+            listeningForTabHotkey = -1;
+            SwingUtilities.invokeLater(() -> {
+                if (tabHotkeyBtns[idx] != null) {
+                    tabHotkeyBtns[idx].setText(NativeKeyEvent.getKeyText(tabHotkey[idx]));
+                    tabHotkeyBtns[idx].setForeground(UIManager.getColor("Button.foreground"));
+                }
+                saveConfig();
+            });
+            return;
+        }
+
+        // Per-sekme hotkey eslesmesi: ilgili sekmeye gecip baslat
+        if (!listeningForCoordParams && !listeningForMacroCoord && !listeningForPixelCoord) {
+            for (int i = 0; i < tabHotkey.length; i++) {
+                if (tabHotkey[i] != 0 && ev.getKeyCode() == tabHotkey[i]) {
+                    startTab(i);
+                    return;
+                }
+            }
         }
 
         if (ev.getKeyCode() == triggerKey && !listeningForCoordParams && !listeningForMacroCoord && !listeningForPixelCoord) {

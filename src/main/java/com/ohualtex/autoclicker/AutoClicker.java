@@ -1,3 +1,5 @@
+package com.ohualtex.autoclicker;
+
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.github.kwhat.jnativehook.GlobalScreen;

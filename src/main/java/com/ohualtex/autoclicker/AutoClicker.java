@@ -1,3 +1,18 @@
+package com.ohualtex.autoclicker;
+
+import com.ohualtex.autoclicker.config.ConfigStore;
+import com.ohualtex.autoclicker.core.Humanizer;
+import com.ohualtex.autoclicker.core.MousePath;
+import com.ohualtex.autoclicker.core.ShutdownCommand;
+import com.ohualtex.autoclicker.i18n.Lang;
+import com.ohualtex.autoclicker.model.ActionType;
+import com.ohualtex.autoclicker.model.MacroAction;
+import com.ohualtex.autoclicker.ui.Icons;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.github.kwhat.jnativehook.GlobalScreen;
@@ -11,6 +26,7 @@ import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Properties;
@@ -20,118 +36,8 @@ import java.util.logging.Logger;
 
 public class AutoClicker extends JFrame implements NativeKeyListener, NativeMouseListener {
 
-    static class Lang {
-        static int L = 0; // 0=TR, 1=EN, 2=DE, 3=FR, 4=IT, 5=RU
-        static java.util.Map<String, String[]> d = new java.util.HashMap<>();
-        static {
-            d.put("st_idle", new String[]{"DURUM: BEKLIYOR", "STATUS: IDLE", "STATUS: BEREIT", "STATUT: EN ATTENTE", "STATO: IN ATTESA", "СТАТУС: ОЖИДАНИЕ"});
-            d.put("st_run", new String[]{"DURUM: CALISIYOR", "STATUS: RUNNING", "STATUS: LÄUFT", "STATUT: EN COURS", "STATO: IN ESECUZIONE", "СТАТУС: РАБОТАЕТ"});
-            d.put("st_lim", new String[]{"DURUM: LIMIT YENDI", "STATUS: LIMIT HIT", "STATUS: LIMIT ERREICHT", "STATUT: LIMITE", "STATO: LIMITE RAGGIUNTO", "СТАТУС: ЛИМИТ"});
-            
-            d.put("t_mouse", new String[]{"Fare", "Mouse", "Maus", "Souris", "Mouse", "Мышь"});
-            d.put("t_key", new String[]{"Klavye", "Keyboard", "Tastatur", "Clavier", "Tastiera", "Клавиатура"});
-            d.put("t_chain", new String[]{"Zincir", "Chain", "Kette", "Chaîne", "Catena", "Цепь"});
-            d.put("t_px", new String[]{"Piksel", "Pixel", "Pixel", "Pixel", "Pixel", "Пиксель"});
-            d.put("t_set", new String[]{"Ayarlar", "Settings", "Einstellungen", "Paramètres", "Impostazioni", "Настройки"});
-            
-            d.put("c_type", new String[]{"Tiklama Tipi: ", "Click Type: ", "Klick-Typ: ", "Type de clic: ", "Tipo di clic: ", "Тип клика: "});
-            d.put("l_click", new String[]{"Sol Tik", "Left Click", "Linksklick", "Clic Gauche", "Clic Sinistro", "Левый Клик"});
-            d.put("r_click", new String[]{"Sag Tik", "Right Click", "Rechtsklick", "Clic Droit", "Clic Destro", "Правый Клик"});
-            d.put("m_click", new String[]{"Orta Tik", "Mid Click", "Mittelklick", "Clic Milieu", "Clic Centrale", "Средний Клик"});
-            d.put("d_click", new String[]{"Cift Sol Tik", "Double Click", "Doppelklick", "Double Clic", "Doppio Clic", "Двойной Клик"});
-            
-            d.put("fix_loc", new String[]{"Sabit Konuma Tikla", "Click Fixed Loc", "Feste Position", "Bouton Fixe", "Pos. Fissa", "Фикс. Место"});
-            d.put("pick_loc", new String[]{"Konum Sec", "Pick Loc", "Wählen", "Choisir", "Seleziona", "Выбрать"});
-            d.put("wait_mid", new String[]{"Bekliyor (Orta Tik)", "Waiting (Mid Click)", "Wartet (Mittelklick)", "Attente (Milieu)", "Attesa (Centrale)", "Ожидание (Ср. клик)"});
-            
-            d.put("anti_ban", new String[]{"Insan Modu (Rastgele Gecikme)", "Humanizer (Random Delay)", "Menschenmodus (Zufall)", "Mode Humain (Délais Aléat.)", "Modalità Umana (Ritardo)", "Анти-Бан (случайная задержка)"});
-            d.put("cps", new String[]{"Fare Hizi (CPS):", "Mouse Speed (CPS):", "Maus-Geschw. (CPS):", "Vitesse Souris (CPS):", "Velocità Mouse (CPS):", "Скорость Мыши (CPS):"});
-            d.put("key_cps", new String[]{"Klavye Hizi (Saniyede):", "Key Speed (/sec):", "Tasten-Geschw. (/s):", "Vitesse Touche (/s):", "Velocità Tasto (/s):", "Скор. Клавиатуры (/с):"});
-            
-            d.put("key_trg", new String[]{"Basilacak Tus:", "Target Key:", "Zieltaste:", "Touche Cible:", "Tasto Obiettivo:", "Целевая Клавиша:"});
-            d.put("set_k", new String[]{"Tus Ata", "Set Key", "Setzen", "Définir", "Assegna", "Назначить"});
-            d.put("press_k", new String[]{"Basin...", "Press...", "Drücken...", "Appuyez...", "Premi...", "Нажмите..."});
-            
-            d.put("add_act", new String[]{"(+) Eylem Ekle", "(+) Add Action", "(+) Aktion", "(+) Ajouter", "(+) Aggiungi", "(+) Добавить"});
-            d.put("del_act", new String[]{"(-) Secileni Sil", "(-) Remove", "(-) Löschen", "(-) Supprimer", "(-) Rimuovi", "(-) Удалить"});
-            d.put("clr_act", new String[]{"(x) Temizle", "(x) Clear", "(x) Leeren", "(x) Effacer", "(x) Pulisci", "(x) Очистить"});
-            
-            d.put("act_typ", new String[]{"Eylem Turu:", "Action Type:", "Aktionsart:", "Type d'action:", "Tipo di Azione:", "Тип Действия:"});
-            d.put("ms_delay", new String[]{"Milisaniye (Gecikme):", "Delay (ms):", "Verzögerung (ms):", "Délai (ms):", "Ritardo (ms):", "Задержка (мс):"});
-            d.put("list_add", new String[]{"[v] Listeye Ekle", "[v] Add to List", "[v] Hinzufügen", "[v] Ajouter", "[v] Aggiungi", "[v] Добавить"});
-            d.put("tnt_mouse", new String[]{"Fare Tiklamasi", "Mouse Click", "Mausklick", "Clic Souris", "Clic Mouse", "Клик Мыши"});
-            d.put("tnt_key", new String[]{"Klavye Tusu", "Key Press", "Taste Drücken", "Appui Touche", "Pressione Tasto", "Нажатие Клавиши"});
-            d.put("tnt_move", new String[]{"Fareyi Tasi", "Move Mouse", "Maus Bewegen", "Bouger Souris", "Sposta Mouse", "Сдвинуть Мышь"});
-            
-            d.put("px_1", new String[]{"1. Gozetlenecek Piksel", "1. Target Pixel", "1. Zielpixel", "1. Pixel Cible", "1. Pixel Obiettivo", "1. Цель Пиксель"});
-            d.put("px_clr", new String[]{"Renk:", "Color:", "Farbe:", "Couleur:", "Colore:", "Цвет:"});
-            d.put("px_2", new String[]{"2. Tetiklenme Sartlari", "2. Conditions", "2. Bedingungen", "2. Conditions", "2. Condizioni", "2. Условия"});
-            d.put("px_cond1", new String[]{"Renk ESLESTIGINDE", "When Color MATCHES", "Farbe ÜBEREINSTIMMT", "Couleur CORRESPOND", "Colore CORRISPONDE", "Когда совпадает"});
-            d.put("px_cond2", new String[]{"Renk DEGISTIGINDE", "When Color CHANGES", "Farbe WECHSELT", "Couleur CHANGE", "Colore CAMBIA", "Когда меняется"});
-            d.put("px_tol", new String[]{"Tolerans Payi (%):", "Tolerance (%):", "Toleranz (%):", "Tolérance (%):", "Tolleranza (%):", "Допуск (%):"});
-            d.put("px_3", new String[]{"3. Gerceklesecek Tepki", "3. Reaction Action", "3. Reaktion", "3. Réaction", "3. Reazione", "3. Реакция"});
-            d.put("px_act3", new String[]{"Ozel Tusa Bas", "Press Custom Key", "Zieltaste drücken", "Appuyer Touche", "Premi Tasto", "Своя Клавиша"});
-            d.put("px_act4", new String[]{"Sadece Zili Cal", "Only Beep", "Nur Piepen", "Bip Sonore", "Suona Solo", "Только Звук"});
-            d.put("px_rate", new String[]{"Tarama Hizi (Ms):", "Scanner Rate (Ms):", "Scanrate (Ms):", "Vitesse Scan (Ms):", "Velocità Scan (Ms):", "Скорость (Мс):"});
-            
-            d.put("set_hk", new String[]{"Kisayol Tusu (Baslat/Durdur):", "Start/Stop Hotkey:", "Start/Stopp Hotkey:", "Raccourci Start/Stop:", "Tasto Avvio/Arresto:", "Горячая Клавиша:"});
-            d.put("lim_title", new String[]{"Otomatik Durdurma Sinirlari", "Auto Stop Limiters", "Auto-Stopp Begrenzungen", "Limites Arrêt Auto", "Limiti Arresto Auto", "Лимиты Автоостановки"});
-            d.put("lim_use", new String[]{"Limitoru Aktif Et", "Enable Limiter", "Limiter aktivieren", "Activer Limiteur", "Abilita Limitatore", "Вкл. Лимитер"});
-            d.put("lim_after", new String[]{"Sinir:", "Limit:", "Limit:", "Dans:", "Dopo:", "Лимит:"});
-            d.put("lim_min", new String[]{"Dakika Sonra", "Minutes Later", "Minuten", "Minutes", "Minuti", "Минут"});
-            d.put("lim_iter", new String[]{"Dongu Sonra", "Iterations Later", "Iterationen", "Itérations", "Iterazioni", "Итераций"});
-            d.put("lim_stop", new String[]{"Sadece Makroyu Durdur", "Just Stop Macro", "Makro stoppen", "Arrêter Macro", "Ferma Macro", "Только стоп"});
-            d.put("lim_shut", new String[]{"Bilgisayari Kapat", "Shutdown PC", "PC herunterfahren", "Éteindre le PC", "Spegni PC", "Выкл ПК"});
-            
-            d.put("style", new String[]{"(O) Gorunum Ozellestirme", "(O) UI Customization", "(O) UI Anpassung", "(O) Apparence UI", "(O) Aspetto UI", "(O) Дизайн UI"});
-            d.put("theme", new String[]{"Ana Tema:", "Main Theme:", "Hauptthema:", "Thème:", "Tema Principale:", "Тема:"});
-            d.put("theme_d", new String[]{"Karanlik Mod", "Dark Mode", "Dunkler Modus", "Sombre", "Modo Scuro", "Темный"});
-            d.put("theme_l", new String[]{"Aydinlik Mod", "Light Mode", "Heller Modus", "Clair", "Modo Chiaro", "Светлый"});
-            d.put("txt_size", new String[]{"Yazi Boyutu:", "Text Size:", "Textgröße:", "Taille:", "Dimensione:", "Размер:"});
-            d.put("txt_col", new String[]{"Metin Rengi:", "Text Color:", "Textfarbe:", "Couleur Texte:", "Colore Testo:", "Цвет Текста:"});
-            d.put("col_pick", new String[]{"Renk Sec", "Pick Color", "Farbe", "Choisir", "Seleziona", "Выбрать Цвет"});
-            d.put("apply_s", new String[]{"Uygula/Kaydet", "Apply/Save", "Anwenden", "Appliquer", "Applica", "Применить"});
-            d.put("lang_title", new String[]{"(L) Dil (Language)", "(L) Language", "(L) Sprache", "(L) Langue", "(L) Lingua", "(L) Язык"});
-            
-            d.put("info_hum", new String[]{"Anti-Ban: Robotik tiklamalari saptirmak icin gecikmelere minik sapmalar ekler.", "Anti-Ban: Adds random fluctuations to delays to simulate human behavior and evade detection.", "Anti-Ban: Fügt den Verzögerungen zufällige Schwankungen hinzu.", "Anti-Ban: Ajoute des fluctuations aléatoires aux délais.", "Anti-Ban: Aggiunge fluttuazioni casuali ai ritardi.", "Анти-Бан: Добавляет случайные колебания к задержкам."});
-            d.put("info_lim", new String[]{"Otomasyonu belirli bir sure sonra kapatir.", "Stops the automation automatically after a set time or cycle count. Ideal for AFK macros.", "Stoppt die Automatisierung automatisch nach einer Weile.", "Arrête automatiquement l'automatisation.", "Ferma l'automazione in base a limiti.", "Останавливает автоматизацию при достижении лимита."});
-            d.put("info_px", new String[]{"Renk Toleransi: Ufak golge farkliliklarinin renk algisini bozmasini engeller.", "Color Tolerance: Prevents minor in-game shading/lighting shifts from ruining detection.", "Farbtoleranz: Verhindert kleine Schattenfehler.", "Tolérance: Empêche les petits changements de lumière de fausser la détection.", "Tolleranza: Evita che l'illuminazione rompa l'algoritmo.", "Допуск: Игнорирует изменения освещения."});
-            d.put("info_cps", new String[]{"Saniyedeki tiklama hizini belirler (Click Per Second).", "Sets the click speed per second (CPS).", "Legt die Klicks pro Sekunde fest.", "Définit la vitesse de clic (CPS).", "Imposta i clic al secondo (CPS).", "Устанавливает кликов в секунду (CPS)."});
-            d.put("info_px_cond", new String[]{"Eslestiginde: Renk gorundugunde tepki verir.\nDegistiginde: Renk kayboldugunda tepki verir.", "Matches: Reacts when color appears.\nChanges: Reacts when color disappears.", "Stimmt überein: Reagiert, wenn die Farbe erscheint.", "Correspond: Agit quand la couleur apparait.", "Corrisponde: Agisce quando il colore appare.", "Совпадает: Реагирует на появление цвета."});
-            d.put("info_px_rate", new String[]{"Tarama Hizi: Ekranin ne siklikla kontrol edilecegini belirler (Milisaniye).", "Scan Rate: How often to check the screen (Milliseconds).", "Scanrate: Wie oft der Bildschirm überprüft wird (ms).", "Taux de scan: Fréquence de vérification (ms).", "Velocità scan: Frequenza di controllo schermo (ms).", "Скорость: Частота проверки экрана (мс)."});
 
-            d.put("info_title", new String[]{"Bilgi", "Info", "Info", "Info", "Info", "Информация"});
-            d.put("reset", new String[]{"Sifirla", "Reset", "Zurücksetzen", "Réinit.", "Reimposta", "Сброс"});
-            d.put("shut_ok", new String[]{"Limit asildi! Bilgisayar %s icinde kapatilacak.", "Limit reached! PC will shut down in %s.", "Limit erreicht! PC fährt in %s herunter.", "Limite atteinte! Le PC s'eteindra dans %s.", "Limite raggiunto! Il PC si spegnera tra %s.", "Лимит достигнут! ПК выключится через %s."});
-            d.put("shut_fail", new String[]{"Kapatma komutu basarisiz oldu: ", "Shutdown command failed: ", "Herunterfahren fehlgeschlagen: ", "Echec de la commande d'arret: ", "Comando di spegnimento fallito: ", "Сбой команды выключения: "});
-            d.put("shut_unsup", new String[]{"Bu isletim sisteminde otomatik kapatma desteklenmiyor: ", "Automatic shutdown not supported on this OS: ", "Automatisches Herunterfahren auf diesem OS nicht unterstützt: ", "Arret automatique non supporte sur cet OS: ", "Spegnimento automatico non supportato su questo OS: ", "Автовыключение не поддерживается в этой ОС: "});
-        }
-        static String get(String key) { return d.containsKey(key) ? d.get(key)[L] : key; }
-    }
-
-    enum ActionType { MOUSE_CLICK, KEY_PRESS, MOUSE_MOVE, DELAY }
-    
-    static class MacroAction {
-        ActionType type;
-        int p1, p2;
-        public MacroAction(ActionType type, int p1, int p2) { this.type = type; this.p1 = p1; this.p2 = p2; }
-        public String toString() {
-            switch(type) {
-                case MOUSE_CLICK: return Lang.get("tnt_mouse") + ": " + (p1==InputEvent.BUTTON1_DOWN_MASK ? Lang.get("l_click") : p1==InputEvent.BUTTON3_DOWN_MASK ? Lang.get("r_click") : p1==999 ? Lang.get("d_click") : Lang.get("m_click"));
-                case KEY_PRESS: return Lang.get("tnt_key") + ": " + KeyEvent.getKeyText(p1);
-                case MOUSE_MOVE: return Lang.get("tnt_move") + ": X=" + p1 + ", Y=" + p2;
-                case DELAY: return Lang.get("ms_delay") + " " + p1;
-                default: return "?";
-            }
-        }
-        public String serialize() { return type.name()+":"+p1+":"+p2; }
-        public static MacroAction deserialize(String s) {
-            String[] parts = s.split(":");
-            return new MacroAction(ActionType.valueOf(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
-        }
-    }
-
-    private final String CONFIG_FILE = "config.properties";
+    private final ConfigStore configStore = new ConfigStore();
     private Properties props = new Properties();
 
     private volatile int triggerKey = NativeKeyEvent.VC_F6;
@@ -145,6 +51,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     // UI
     private JLabel statusLabel;
     private JButton hotkeyBtn;
+    private JTabbedPane tabbedPane;
     
     // Limits
     private JCheckBox useLimitBox;
@@ -194,6 +101,27 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private JPanel customColorPreview;
     private JComboBox<String> langBox;
 
+    // Scheduler (gecikmeli baslat)
+    private JCheckBox schedulerBox;
+    private JTextField schedulerDelayField;
+    private javax.swing.Timer scheduleTimer;
+
+    // System tray
+    private TrayIcon trayIcon;
+
+    // Per-sekme (per-makro) hotkey: 0=Fare 1=Klavye 2=Zincir 3=Piksel (0 = atanmamis)
+    private final int[] tabHotkey = new int[4];
+    private final JButton[] tabHotkeyBtns = new JButton[4];
+    private volatile int listeningForTabHotkey = -1;
+
+    // Profiller
+    private JComboBox<String> profileBox;
+
+    // Record/replay (gercek tiklama/tus kaydi -> zincire)
+    private volatile boolean recording = false;
+    private volatile long recordLastTime = 0L;
+    private JButton recordBtn;
+
     public AutoClicker() {
         try {
             robot = new Robot();
@@ -207,7 +135,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         Lang.L = Integer.parseInt(props.getProperty("langIndex", "0"));
         applyInitialTheme();
 
-        setTitle("AutoClicker Ultimate v6.1");
+        setTitle("AutoClicker Ultimate v" + appVersion());
         setSize(600, 780);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -215,7 +143,8 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
         initUI();
         initJNativeHook();
-        
+        initTray();
+
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -224,8 +153,55 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         });
     }
 
+    // Sistem tepsisi ikonu: simge durumuna kuculunce gizle, tray menusunden goster/baslat-durdur/cikis
+    private void initTray() {
+        if (!SystemTray.isSupported()) return;
+        try {
+            PopupMenu menu = new PopupMenu();
+            MenuItem showItem = new MenuItem(Lang.get("tray_show"));
+            showItem.addActionListener(e -> restoreFromTray());
+            MenuItem toggleItem = new MenuItem(Lang.get("tray_toggle"));
+            toggleItem.addActionListener(e -> SwingUtilities.invokeLater(this::toggle));
+            MenuItem exitItem = new MenuItem(Lang.get("tray_exit"));
+            exitItem.addActionListener(e -> { saveConfig(); System.exit(0); });
+            menu.add(showItem); menu.add(toggleItem); menu.addSeparator(); menu.add(exitItem);
+
+            trayIcon = new TrayIcon(buildTrayImage(), "AutoClicker", menu);
+            trayIcon.setImageAutoSize(true);
+            trayIcon.addActionListener(e -> restoreFromTray()); // cift tik
+            SystemTray.getSystemTray().add(trayIcon);
+
+            addWindowStateListener(e -> {
+                if ((e.getNewState() & JFrame.ICONIFIED) != 0) setVisible(false); // simge durumu -> tepsiye gizle
+            });
+        } catch (Exception ex) {
+            trayIcon = null;
+        }
+    }
+
+    private void restoreFromTray() {
+        SwingUtilities.invokeLater(() -> {
+            setVisible(true);
+            setExtendedState(JFrame.NORMAL);
+            toFront();
+            requestFocus();
+        });
+    }
+
+    private Image buildTrayImage() {
+        java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(16, 16, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = bi.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setColor(new Color(90, 160, 255));
+        g.fillOval(1, 1, 14, 14);
+        g.setColor(Color.WHITE);
+        g.fillOval(6, 6, 4, 4);
+        g.dispose();
+        return bi;
+    }
+
     private void rebuildUI() {
-        JTabbedPane tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
+        JTabbedPane tabs = tabbedPane;
         int currentTab = (tabs != null) ? tabs.getSelectedIndex() : 0;
         int scrollVal = 0;
         if (currentTab == 4 && tabs != null) {
@@ -238,7 +214,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         applyInitialTheme(); 
         initUI();
 
-        tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
+        tabs = tabbedPane;
         if (tabs != null) {
             tabs.setSelectedIndex(currentTab);
             if (currentTab == 4) {
@@ -251,57 +227,8 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         repaint();
     }
 
-    // Native 2D Icons
-    static class MouseIcon implements Icon {
-        public int getIconWidth() { return 16; } public int getIconHeight() { return 16; }
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            Graphics2D g2 = (Graphics2D)g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(c.getForeground()); g2.drawRoundRect(x+3, y+1, 10, 14, 6, 6); g2.drawLine(x+8, y+1, x+8, y+5); g2.drawOval(x+7, y+3, 2, 4); g2.dispose();
-        }
-    }
-    static class KeyIcon implements Icon {
-        public int getIconWidth() { return 16; } public int getIconHeight() { return 16; }
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            Graphics2D g2 = (Graphics2D)g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(c.getForeground()); g2.drawRoundRect(x+1, y+4, 14, 8, 2, 2);
-            g2.fillRect(x+3, y+6, 2, 2); g2.fillRect(x+7, y+6, 2, 2); g2.fillRect(x+11, y+6, 2, 2); g2.fillRect(x+5, y+9, 6, 2); g2.dispose();
-        }
-    }
-    static class ChainIcon implements Icon {
-        public int getIconWidth() { return 16; } public int getIconHeight() { return 16; }
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            Graphics2D g2 = (Graphics2D)g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setStroke(new BasicStroke(2)); g2.setColor(c.getForeground());
-            g2.drawOval(x+1, y+5, 8, 6); g2.drawOval(x+7, y+5, 8, 6); g2.dispose();
-        }
-    }
-    static class PixelIcon implements Icon {
-        public int getIconWidth() { return 16; } public int getIconHeight() { return 16; }
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            Graphics2D g2 = (Graphics2D)g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(c.getForeground()); g2.drawOval(x+2, y+2, 12, 12);
-            g2.drawLine(x+8, y+0, x+8, y+4); g2.drawLine(x+8, y+12, x+8, y+16);
-            g2.drawLine(x+0, y+8, x+4, y+8); g2.drawLine(x+12, y+8, x+16, y+8); g2.fillOval(x+6, y+6, 4, 4); g2.dispose();
-        }
-    }
-    static class GearIcon implements Icon {
-        public int getIconWidth() { return 16; } public int getIconHeight() { return 16; }
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            Graphics2D g2 = (Graphics2D)g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(c.getForeground()); g2.setStroke(new BasicStroke(2)); g2.drawOval(x+4, y+4, 8, 8);
-            for(int i=0; i<8; i++) { double a = i * Math.PI/4; g2.drawLine(x+8+(int)(4*Math.cos(a)), y+8+(int)(4*Math.sin(a)), x+8+(int)(7*Math.cos(a)), y+8+(int)(7*Math.sin(a))); } g2.dispose();
-        }
-    }
-    static class InfoIcon implements Icon {
-        public int getIconWidth() { return 14; } public int getIconHeight() { return 14; }
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            Graphics2D g2 = (Graphics2D)g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(c.getForeground()); g2.drawOval(x+1, y+1, 12, 12); g2.fillRect(x+6, y+4, 2, 2); g2.fillRect(x+6, y+7, 2, 4); g2.dispose();
-        }
-    }
-
     private JButton createInfoButton(String tooltipKey) {
-        JButton btn = new JButton(new InfoIcon());
+        JButton btn = new JButton(new Icons.InfoIcon());
         btn.setMargin(new Insets(0,0,0,0));
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
@@ -380,21 +307,54 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private void loadConfig() {
-        try (FileInputStream fis = new FileInputStream(CONFIG_FILE)) {
-            props.load(fis);
-            triggerKey = Integer.parseInt(props.getProperty("hotkey", String.valueOf(NativeKeyEvent.VC_F6)));
-        } catch (Exception e) {
-            // Ilk acilista dosya yoklugu normaldir; digerlerini bildir
-            if (!(e instanceof java.io.FileNotFoundException)) {
-                System.err.println("[AutoClicker] Config okunamadi: " + e.getMessage());
-            }
-        }
+        props = configStore.load();
+        triggerKey = Integer.parseInt(props.getProperty("hotkey", String.valueOf(NativeKeyEvent.VC_F6)));
     }
 
     private void saveConfig() {
-        try (FileOutputStream fos = new FileOutputStream(CONFIG_FILE)) {
+        gatherProps();
+        configStore.store(props);
+    }
+
+    // ---- Profiller (ConfigStore: config dizininde profile-<ad>.properties) ----
+    private String[] listProfiles() {
+        return configStore.listProfiles();
+    }
+
+    private void saveProfile(String name) {
+        gatherProps();                       // mevcut UI durumunu props'a topla
+        configStore.saveProfile(props, name);
+    }
+
+    private void deleteProfile(String name) {
+        configStore.deleteProfile(name);
+    }
+
+    private void loadProfile(String name) {
+        Properties np = configStore.loadProfile(name);
+        if (np == null) return;
+        this.props = np;
+        triggerKey = Integer.parseInt(props.getProperty("hotkey", String.valueOf(NativeKeyEvent.VC_F6)));
+        Lang.L = Integer.parseInt(props.getProperty("langIndex", "0"));
+        // UI'yi yeni profile gore tamamen yeniden kur (tema/dil/renk dahil)
+        getContentPane().removeAll();
+        applyInitialTheme();
+        initUI();
+        revalidate();
+        repaint();
+        saveConfig(); // aktif config'i yuklenen profile esitle
+    }
+
+    private void refreshProfiles(String selectName) {
+        if (profileBox == null) return;
+        profileBox.setModel(new DefaultComboBoxModel<>(listProfiles()));
+        if (selectName != null) profileBox.setSelectedItem(selectName);
+    }
+
+    // UI durumunu props'a toplar (dosyaya yazma ConfigStore'da)
+    private void gatherProps() {
             props.setProperty("hotkey", String.valueOf(triggerKey));
-            
+
             props.setProperty("mouseCps", String.valueOf(mouseCpsSlider.getValue()));
             props.setProperty("mouseBtn", String.valueOf(mouseBtnBox.getSelectedIndex()));
             props.setProperty("mouseHumanizer", String.valueOf(mouseHumanizerBox.isSelected()));
@@ -446,10 +406,12 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             
             props.setProperty("langIndex", String.valueOf(langBox.getSelectedIndex()));
 
-            props.store(fos, "AutoClicker Configuration");
-        } catch (Exception e) {
-            System.err.println("[AutoClicker] Config kaydedilemedi: " + e.getMessage());
-        }
+            props.setProperty("schedUse", String.valueOf(schedulerBox.isSelected()));
+            props.setProperty("schedDelay", schedulerDelayField.getText());
+
+            for (int i = 0; i < tabHotkey.length; i++) {
+                props.setProperty("tabHotkey" + i, String.valueOf(tabHotkey[i]));
+            }
     }
 
     private void initUI() {
@@ -462,15 +424,15 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         statusLabel.setForeground(new Color(255, 90, 90));
         headerPanel.add(statusLabel);
 
-        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        tabbedPane.addTab(Lang.get("t_mouse"), new MouseIcon(), buildMousePanel());
-        tabbedPane.addTab(Lang.get("t_key"), new KeyIcon(), buildKeyboardPanel());
-        tabbedPane.addTab(Lang.get("t_chain"), new ChainIcon(), buildChainPanel());
-        tabbedPane.addTab(Lang.get("t_px"), new PixelIcon(), buildPixelPanel());
+        tabbedPane.addTab(Lang.get("t_mouse"), new Icons.MouseIcon(), buildMousePanel());
+        tabbedPane.addTab(Lang.get("t_key"), new Icons.KeyIcon(), buildKeyboardPanel());
+        tabbedPane.addTab(Lang.get("t_chain"), new Icons.ChainIcon(), buildChainPanel());
+        tabbedPane.addTab(Lang.get("t_px"), new Icons.PixelIcon(), buildPixelPanel());
         JScrollPane setScroll = new JScrollPane(buildSettingsPanel());
         setScroll.setBorder(null);
-        tabbedPane.addTab(Lang.get("t_set"), new GearIcon(), setScroll);
+        tabbedPane.addTab(Lang.get("t_set"), new Icons.GearIcon(), setScroll);
 
         add(headerPanel, BorderLayout.NORTH);
         add(tabbedPane, BorderLayout.CENTER);
@@ -537,6 +499,16 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             fontSlider.setValue(Integer.parseInt(props.getProperty("fontSize", "14")));
             if(props.containsKey("fontColor")) customColorPreview.setBackground(new Color(Integer.parseInt(props.getProperty("fontColor"))));
             langBox.setSelectedIndex(Integer.parseInt(props.getProperty("langIndex", "0")));
+
+            schedulerBox.setSelected(Boolean.parseBoolean(props.getProperty("schedUse", "false")));
+            schedulerDelayField.setText(props.getProperty("schedDelay", "5"));
+
+            for (int i = 0; i < tabHotkey.length; i++) {
+                tabHotkey[i] = Integer.parseInt(props.getProperty("tabHotkey" + i, "0"));
+                if (tabHotkeyBtns[i] != null) {
+                    tabHotkeyBtns[i].setText(tabHotkey[i] != 0 ? NativeKeyEvent.getKeyText(tabHotkey[i]) : "-");
+                }
+            }
 
         } catch (Exception e) {
             System.err.println("[AutoClicker] Config UI'ye uygulanamadi: " + e.getMessage());
@@ -654,7 +626,25 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         rightPanel.add(remBtn);
         rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         rightPanel.add(clrBtn);
-        
+
+        JButton exportBtn = new JButton(Lang.get("io_export"));
+        JButton importBtn = new JButton(Lang.get("io_import"));
+        exportBtn.setMaximumSize(new Dimension(150, 35));
+        importBtn.setMaximumSize(new Dimension(150, 35));
+        exportBtn.addActionListener(e -> exportChain());
+        importBtn.addActionListener(e -> importChain());
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        rightPanel.add(exportBtn);
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        rightPanel.add(importBtn);
+
+        recordBtn = new JButton(recording ? Lang.get("rec_stop") : Lang.get("rec_start"));
+        recordBtn.setMaximumSize(new Dimension(150, 35));
+        if (recording) recordBtn.setForeground(Color.RED);
+        recordBtn.addActionListener(e -> toggleRecording());
+        rightPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        rightPanel.add(recordBtn);
+
         JPanel pAnti = new JPanel(new FlowLayout(FlowLayout.LEFT));
         chainHumanizerBox = new JCheckBox(Lang.get("anti_ban"));
         pAnti.add(chainHumanizerBox); pAnti.add(createInfoButton("info_hum"));
@@ -663,6 +653,89 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
         panel.add(rightPanel, BorderLayout.EAST);
         return panel;
+    }
+
+    // Zinciri JSON dosyasina aktarir
+    private void exportChain() {
+        if (chainModel.isEmpty()) { Toolkit.getDefaultToolkit().beep(); return; }
+        JFileChooser fc = new JFileChooser();
+        fc.setSelectedFile(new File("macro.json"));
+        if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        File f = fc.getSelectedFile();
+        if (!f.getName().toLowerCase().endsWith(".json")) f = new File(f.getParentFile(), f.getName() + ".json");
+
+        JsonArray arr = new JsonArray();
+        for (int i = 0; i < chainModel.getSize(); i++) {
+            MacroAction a = chainModel.get(i);
+            JsonObject o = new JsonObject();
+            o.addProperty("type", a.type.name());
+            o.addProperty("p1", a.p1);
+            o.addProperty("p2", a.p2);
+            arr.add(o);
+        }
+        JsonObject doc = new JsonObject();
+        doc.addProperty("app", "AutoClicker");
+        doc.addProperty("version", appVersion());
+        doc.add("actions", arr);
+
+        try (java.io.Writer w = new java.io.FileWriter(f)) {
+            new Gson().toJson(doc, w);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, Lang.get("io_fail") + ex.getMessage());
+        }
+    }
+
+    // JSON dosyasindan zincir yukler (mevcut listenin yerine)
+    private void importChain() {
+        JFileChooser fc = new JFileChooser();
+        if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        try (java.io.Reader r = new java.io.FileReader(fc.getSelectedFile())) {
+            JsonObject doc = JsonParser.parseReader(r).getAsJsonObject();
+            JsonArray arr = doc.getAsJsonArray("actions");
+            chainModel.clear();
+            for (JsonElement el : arr) {
+                JsonObject o = el.getAsJsonObject();
+                ActionType t = ActionType.valueOf(o.get("type").getAsString());
+                int p1 = o.get("p1").getAsInt();
+                int p2 = o.has("p2") ? o.get("p2").getAsInt() : 0;
+                chainModel.addElement(new MacroAction(t, p1, p2));
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, Lang.get("io_fail") + ex.getMessage());
+        }
+    }
+
+    // ---- Record/replay: gercek girdiyi zincire kaydeder ----
+    private void toggleRecording() {
+        if (recording) stopRecording(); else startRecording();
+    }
+
+    private void startRecording() {
+        recording = true;
+        recordLastTime = 0L;
+        if (recordBtn != null) { recordBtn.setText(Lang.get("rec_stop")); recordBtn.setForeground(Color.RED); }
+        statusLabel.setText(Lang.get("rec_status"));
+        statusLabel.setForeground(new Color(255, 80, 80));
+    }
+
+    private void stopRecording() {
+        recording = false;
+        if (recordBtn != null) { recordBtn.setText(Lang.get("rec_start")); recordBtn.setForeground(UIManager.getColor("Button.foreground")); }
+        statusLabel.setText(Lang.get("st_idle"));
+        statusLabel.setForeground(new Color(255, 90, 90));
+    }
+
+    // Bir onceki olaydan bu yana gecen sureyi DELAY olarak ekler (zamanlama korunur)
+    private void appendRecordedDelay() {
+        long now = System.currentTimeMillis();
+        if (recordLastTime != 0L) {
+            long delta = now - recordLastTime;
+            if (delta > 15 && delta < 600000) {
+                final int d = (int) delta;
+                SwingUtilities.invokeLater(() -> chainModel.addElement(new MacroAction(ActionType.DELAY, d, 0)));
+            }
+        }
+        recordLastTime = now;
     }
 
     private JPanel buildPixelPanel() {
@@ -890,6 +963,71 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         limitPanel.add(p1); limitPanel.add(p2); limitPanel.add(p3);
         panel.add(limitPanel);
 
+        // SCHEDULER (gecikmeli baslat)
+        JPanel schedPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        schedPanel.setBorder(BorderFactory.createTitledBorder(Lang.get("sched_title")));
+        schedulerBox = new JCheckBox(Lang.get("sched_use"));
+        schedulerDelayField = new JTextField("5", 4);
+        schedPanel.add(schedulerBox);
+        schedPanel.add(schedulerDelayField);
+        schedPanel.add(new JLabel(Lang.get("sched_sec")));
+        panel.add(schedPanel);
+
+        // PER-SEKME HOTKEY
+        JPanel tabHkPanel = new JPanel();
+        tabHkPanel.setLayout(new BoxLayout(tabHkPanel, BoxLayout.Y_AXIS));
+        tabHkPanel.setBorder(BorderFactory.createTitledBorder(Lang.get("tabhk_title")));
+        String[] tabKeys = { "t_mouse", "t_key", "t_chain", "t_px" };
+        for (int i = 0; i < 4; i++) {
+            final int idx = i;
+            JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            row.add(new JLabel(Lang.get(tabKeys[i]) + ": "));
+            JButton b = new JButton(tabHotkey[i] != 0 ? NativeKeyEvent.getKeyText(tabHotkey[i]) : "-");
+            b.addActionListener(e -> {
+                listeningForTabHotkey = idx;
+                b.setText(Lang.get("press_k"));
+                b.setForeground(Color.RED);
+            });
+            tabHotkeyBtns[i] = b;
+            row.add(b);
+            JButton clr = new JButton("x");
+            clr.addActionListener(e -> {
+                tabHotkey[idx] = 0;
+                b.setText("-");
+                b.setForeground(UIManager.getColor("Button.foreground"));
+                saveConfig();
+            });
+            row.add(clr);
+            tabHkPanel.add(row);
+        }
+        panel.add(tabHkPanel);
+
+        // PROFILLER
+        JPanel profPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        profPanel.setBorder(BorderFactory.createTitledBorder(Lang.get("prof_title")));
+        profileBox = new JComboBox<>(listProfiles());
+        profileBox.setEditable(true);
+        profileBox.setPreferredSize(new Dimension(150, 28));
+        JButton saveProfBtn = new JButton(Lang.get("prof_save"));
+        JButton loadProfBtn = new JButton(Lang.get("prof_load"));
+        JButton delProfBtn = new JButton(Lang.get("prof_del"));
+        saveProfBtn.addActionListener(e -> {
+            String name = String.valueOf(profileBox.getEditor().getItem()).trim();
+            if (name.isEmpty()) { Toolkit.getDefaultToolkit().beep(); return; }
+            saveProfile(name);
+            refreshProfiles(name);
+        });
+        loadProfBtn.addActionListener(e -> {
+            Object sel = profileBox.getSelectedItem();
+            if (sel != null && !String.valueOf(sel).trim().isEmpty()) loadProfile(String.valueOf(sel).trim());
+        });
+        delProfBtn.addActionListener(e -> {
+            Object sel = profileBox.getSelectedItem();
+            if (sel != null && !String.valueOf(sel).trim().isEmpty()) { deleteProfile(String.valueOf(sel).trim()); refreshProfiles(null); }
+        });
+        profPanel.add(profileBox); profPanel.add(saveProfBtn); profPanel.add(loadProfBtn); profPanel.add(delProfBtn);
+        panel.add(profPanel);
+
         // UI STYLE PANEL V5.1
         JPanel stylePanel = new JPanel();
         stylePanel.setLayout(new BoxLayout(stylePanel, BoxLayout.Y_AXIS));
@@ -956,10 +1094,14 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         slider.addChangeListener(e -> field.setText(String.valueOf(slider.getValue())));
         field.addKeyListener(new KeyAdapter() {
             public void keyReleased(KeyEvent e) {
+                boolean ok = false;
                 try {
-                    int val = Integer.parseInt(field.getText());
-                    if (val >= slider.getMinimum() && val <= max) slider.setValue(val);
-                } catch (Exception ex){}
+                    int val = Integer.parseInt(field.getText().trim());
+                    if (val >= slider.getMinimum() && val <= max) { slider.setValue(val); ok = true; }
+                } catch (Exception ex) { }
+                // Bos alan notr; gecersiz/araliga sigmayan deger kirmizi cerceve
+                field.putClientProperty("JComponent.outline", (ok || field.getText().trim().isEmpty()) ? null : "error");
+                field.repaint();
             }
         });
 
@@ -1024,26 +1166,8 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private void executeLimitAction(int action) {
         isRunning = false;
         if(action == 1) { // bilgisayari kapat
-            String os = System.getProperty("os.name").toLowerCase();
-            String[] cmd = null;
-            String delayLabel = null;
-            if (os.contains("win")) { cmd = new String[]{"shutdown", "-s", "-t", "15"}; delayLabel = "15 sn"; }
-            else if (os.contains("mac")) { cmd = new String[]{"shutdown", "-h", "+1"}; delayLabel = "1 dk"; }
-            else if (os.contains("nux") || os.contains("nix") || os.contains("aix")) { cmd = new String[]{"shutdown", "-h", "+1"}; delayLabel = "1 dk"; }
-
-            if (cmd != null) {
-                final String label = delayLabel;
-                try {
-                    Runtime.getRuntime().exec(cmd);
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, String.format(Lang.get("shut_ok"), label)));
-                } catch (Exception e) {
-                    final String err = String.valueOf(e.getMessage());
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, Lang.get("shut_fail") + err));
-                }
-            } else {
-                final String osName = os;
-                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, Lang.get("shut_unsup") + osName));
-            }
+            ShutdownCommand.Result sc = ShutdownCommand.forOs(System.getProperty("os.name"));
+            SwingUtilities.invokeLater(() -> executeShutdownWithCancel(sc));
         } else {
             SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
         }
@@ -1051,6 +1175,33 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             statusLabel.setText(Lang.get("st_lim"));
             statusLabel.setForeground(new Color(255, 90, 90));
         });
+    }
+
+    // EDT'de: OS gecikmeli kapatmayi baslatir, gecikme penceresinde iptal sunar.
+    // AFK ise (kimse iptal etmezse) bilgisayar kapanir; kullanici varsa iptal edebilir.
+    private void executeShutdownWithCancel(ShutdownCommand.Result sc) {
+        if (sc == null || !sc.isSupported()) {
+            JOptionPane.showMessageDialog(this, Lang.get("shut_unsup") + System.getProperty("os.name"));
+            return;
+        }
+        try {
+            Runtime.getRuntime().exec(sc.command); // OS gecikmeli kapatma baslar
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, Lang.get("shut_fail") + e.getMessage());
+            return;
+        }
+        int sel = JOptionPane.showOptionDialog(this,
+            String.format(Lang.get("shut_pending"), sc.delayLabel),
+            Lang.get("shut_title"), JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,
+            null, new Object[]{ Lang.get("shut_cancel_btn") }, Lang.get("shut_cancel_btn"));
+        if (sel == 0 && sc.cancelCommand != null) {
+            try {
+                Runtime.getRuntime().exec(sc.cancelCommand);
+                JOptionPane.showMessageDialog(this, Lang.get("shut_cancelled"));
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, Lang.get("shut_fail") + e.getMessage());
+            }
+        }
     }
 
     private void stopWorker() {
@@ -1063,109 +1214,195 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         workerThread = null;
     }
 
+    // Limitor aciksa deger pozitif tam sayi olmali; degilse alani kirmizi cerceveler ve false doner
+    private boolean validateLimitInput() {
+        if (!useLimitBox.isSelected()) {
+            limitValField.putClientProperty("JComponent.outline", null);
+            limitValField.repaint();
+            return true;
+        }
+        int v;
+        try { v = Integer.parseInt(limitValField.getText().trim()); } catch (Exception e) { v = -1; }
+        boolean ok = v > 0;
+        limitValField.putClientProperty("JComponent.outline", ok ? null : "error");
+        limitValField.repaint();
+        if (!ok) Toolkit.getDefaultToolkit().beep();
+        return ok;
+    }
+
+    // ESC panik tusu: kosulsuz durdurma + sesli uyari (EDT'de calisir)
+    private void stopFromPanic() {
+        if (!isRunning) return;
+        stopWorker();
+        statusLabel.setText(Lang.get("st_idle"));
+        statusLabel.setForeground(new Color(255, 90, 90));
+        Toolkit.getDefaultToolkit().beep();
+    }
+
     private void toggle() {
+        // Zamanlayici geri sayimi devam ediyorsa hotkey iptal eder
+        if (scheduleTimer != null) {
+            scheduleTimer.stop();
+            scheduleTimer = null;
+            statusLabel.setText(Lang.get("st_idle"));
+            statusLabel.setForeground(new Color(255, 90, 90));
+            return;
+        }
+
         if (isRunning) {
             stopWorker();
             statusLabel.setText(Lang.get("st_idle"));
             statusLabel.setForeground(new Color(255, 90, 90));
+            return;
+        }
+
+        // Eski worker hala canliysa once tamamen durdur (cift makro yarisini onler)
+        stopWorker();
+
+        // Limitor aciksa gecersiz/0 deger ani durdurma/kapatma yapmasin
+        if (!validateLimitInput()) {
+            statusLabel.setText(Lang.get("lim_invalid"));
+            statusLabel.setForeground(new Color(255, 165, 0));
+            return;
+        }
+
+        // Zamanlayici aciksa once geri sayim
+        int delaySec = schedulerDelaySeconds();
+        if (delaySec > 0) {
+            startScheduledCountdown(delaySec);
+            return;
+        }
+
+        startActiveTab();
+    }
+
+    // Aktif sekmenin makrosunu baslatir ve durumu gunceller (toggle ve zamanlayici kullanir)
+    private void startActiveTab() {
+        JTabbedPane tabs = tabbedPane;
+        int selectedTab = tabs.getSelectedIndex();
+
+        boolean started;
+        if (selectedTab == 0) started = startMouseMacro();
+        else if (selectedTab == 1) started = startKeyMacro();
+        else if (selectedTab == 2) started = startChainMacro();
+        else if (selectedTab == 3) started = startPixelMacro();
+        else return;
+
+        if (started) {
+            statusLabel.setText(Lang.get("st_run"));
+            statusLabel.setForeground(new Color(90, 255, 90));
         } else {
-            // Eski worker hala canliysa once tamamen durdur (cift makro yarisini onler)
-            stopWorker();
-
-            JTabbedPane tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
-            int selectedTab = tabs.getSelectedIndex();
-
-            boolean started;
-            if (selectedTab == 0) started = startMouseMacro();
-            else if (selectedTab == 1) started = startKeyMacro();
-            else if (selectedTab == 2) started = startChainMacro();
-            else if (selectedTab == 3) started = startPixelMacro();
-            else return;
-
-            if (started) {
-                statusLabel.setText(Lang.get("st_run"));
-                statusLabel.setForeground(new Color(90, 255, 90));
-            } else {
-                statusLabel.setText(Lang.get("st_idle"));
-                statusLabel.setForeground(new Color(255, 90, 90));
-            }
+            statusLabel.setText(Lang.get("st_idle"));
+            statusLabel.setForeground(new Color(255, 90, 90));
         }
     }
 
-    private boolean startMouseMacro() {
-        int cps = mouseCpsSlider.getValue();
-        int baseDelay = 1000 / Math.max(cps, 1);
-        int mode = mouseBtnBox.getSelectedIndex(); 
-        boolean useHumanizer = mouseHumanizerBox.isSelected();
-        boolean useCoord = targetCoordBox.isSelected() && targetPoint != null;
-        final LimitConfig limits = snapshotLimits();
+    // Per-sekme hotkey: idle ise i. sekmeye gecip baslatir; calisirken/sayimda durdurur
+    private void startTab(int index) {
+        SwingUtilities.invokeLater(() -> {
+            if (scheduleTimer != null || isRunning) { toggle(); return; }
+            JTabbedPane tabs = tabbedPane;
+            if (tabs == null || index < 0 || index >= 4) return;
+            tabs.setSelectedIndex(index);
+            toggle();
+        });
+    }
 
-        long startTime = System.currentTimeMillis();
+    // Zamanlayici acik ve gecerli pozitif deger ise saniye, aksi halde 0
+    private int schedulerDelaySeconds() {
+        if (schedulerBox == null || !schedulerBox.isSelected()) return 0;
+        try {
+            int s = Integer.parseInt(schedulerDelayField.getText().trim());
+            return s > 0 ? s : 0;
+        } catch (Exception e) { return 0; }
+    }
 
+    // Geri sayim sonunda aktif sekme makrosunu baslatir (EDT Swing Timer)
+    private void startScheduledCountdown(int totalSec) {
+        final int[] remaining = { totalSec };
+        statusLabel.setForeground(new Color(255, 165, 0));
+        statusLabel.setText(String.format(Lang.get("sched_countdown"), remaining[0]));
+        scheduleTimer = new javax.swing.Timer(1000, null);
+        scheduleTimer.addActionListener(e -> {
+            remaining[0]--;
+            if (remaining[0] <= 0) {
+                scheduleTimer.stop();
+                scheduleTimer = null;
+                startActiveTab();
+            } else {
+                statusLabel.setText(String.format(Lang.get("sched_countdown"), remaining[0]));
+            }
+        });
+        scheduleTimer.setInitialDelay(1000);
+        scheduleTimer.start();
+    }
+
+    // Tek iterasyonun govdesi (Strategy). InterruptedException firlatabilir; motor yakalar.
+    @FunctionalInterface
+    private interface MacroBody { void iterate() throws InterruptedException; }
+
+    // Ortak makro motoru: worker thread + while(isRunning) + iterasyon sayaci + limit kontrolu.
+    // body her dongude calisir; onEnd (varsa) dongu bittiginde calisir. Tum start*Macro bunu kullanir.
+    private boolean startMacro(LimitConfig limits, MacroBody body, Runnable onEnd) {
+        final long startTime = System.currentTimeMillis();
         isRunning = true;
         workerThread = new Thread(() -> {
             int iteration = 0;
             while (isRunning) {
                 iteration++;
                 if (!checkLimits(limits, startTime, iteration)) break;
-
                 try {
-                    if (useCoord) {
-                        robot.mouseMove(targetPoint.x, targetPoint.y);
-                    }
-                    
-                    switch (mode) {
-                        case 0: doMouseClick(InputEvent.BUTTON1_DOWN_MASK); break;
-                        case 1: doMouseClick(InputEvent.BUTTON3_DOWN_MASK); break;
-                        case 2: doMouseClick(InputEvent.BUTTON2_DOWN_MASK); break;
-                        case 3: 
-                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
-                            robot.delay(40);
-                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
-                            break;
-                    }
-                    
-                    int sleepTime = getHumanizedDelay(baseDelay, useHumanizer);
-                    Thread.sleep(sleepTime);
-                } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                    body.iterate();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
             }
-        });
+            if (onEnd != null) onEnd.run();
+        }, "AutoClicker-Macro");
         workerThread.start();
         return true;
     }
 
+    private boolean startMouseMacro() {
+        final int baseDelay = 1000 / Math.max(mouseCpsSlider.getValue(), 1);
+        final int mode = mouseBtnBox.getSelectedIndex();
+        final boolean useHumanizer = mouseHumanizerBox.isSelected();
+        final boolean useCoord = targetCoordBox.isSelected() && targetPoint != null;
+        final LimitConfig limits = snapshotLimits();
+
+        return startMacro(limits, () -> {
+            if (useCoord) robot.mouseMove(targetPoint.x, targetPoint.y);
+            switch (mode) {
+                case 0: doMouseClick(InputEvent.BUTTON1_DOWN_MASK); break;
+                case 1: doMouseClick(InputEvent.BUTTON3_DOWN_MASK); break;
+                case 2: doMouseClick(InputEvent.BUTTON2_DOWN_MASK); break;
+                case 3:
+                    doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
+                    robot.delay(40);
+                    doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
+                    break;
+            }
+            Thread.sleep(getHumanizedDelay(baseDelay, useHumanizer));
+        }, null);
+    }
+
     private boolean startKeyMacro() {
-        int cps = keyCpsSlider.getValue();
-        int baseDelay = Math.max(1, 1000 / cps);
-        boolean useHumanizer = keyHumanizerBox.isSelected();
+        final int baseDelay = Math.max(1, 1000 / keyCpsSlider.getValue());
+        final boolean useHumanizer = keyHumanizerBox.isSelected();
         final int targetKey = selectedNativeKeyCode;
         final LimitConfig limits = snapshotLimits();
 
-        long startTime = System.currentTimeMillis();
-
-        isRunning = true;
-        workerThread = new Thread(() -> {
-            int iteration = 0;
-            while (isRunning) {
-                iteration++;
-                if (!checkLimits(limits, startTime, iteration)) break;
-
-                try {
-                    // press->release araligini kisa tut ve CPS butcesinden dus ki gercek hiz hedefe yapissin
-                    int releaseGap = Math.min(baseDelay / 2, 5 + random.nextInt(10));
-                    if (releaseGap < 2) releaseGap = 2;
-                    robot.keyPress(targetKey);
-                    robot.delay(releaseGap);
-                    robot.keyRelease(targetKey);
-
-                    int remaining = Math.max(1, baseDelay - releaseGap);
-                    int sleepTime = getHumanizedDelay(remaining, useHumanizer);
-                    Thread.sleep(sleepTime);
-                } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-            }
-        });
-        workerThread.start();
-        return true;
+        return startMacro(limits, () -> {
+            // press->release araligini kisa tut ve CPS butcesinden dus ki gercek hiz hedefe yapissin
+            int releaseGap = Math.min(baseDelay / 2, 5 + random.nextInt(10));
+            if (releaseGap < 2) releaseGap = 2;
+            robot.keyPress(targetKey);
+            robot.delay(releaseGap);
+            robot.keyRelease(targetKey);
+            int remaining = Math.max(1, baseDelay - releaseGap);
+            Thread.sleep(getHumanizedDelay(remaining, useHumanizer));
+        }, null);
     }
 
     private boolean startChainMacro() {
@@ -1173,61 +1410,42 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
             return false;
         }
-
-        boolean useHumanizer = chainHumanizerBox.isSelected();
+        final boolean useHumanizer = chainHumanizerBox.isSelected();
         final LimitConfig limits = snapshotLimits();
         // Worker thread'in DefaultListModel'a EDT-disi erismesini onlemek icin diziye snapshot al
         final MacroAction[] actions = new MacroAction[chainModel.getSize()];
         for (int i = 0; i < actions.length; i++) actions[i] = chainModel.get(i);
-        long startTime = System.currentTimeMillis();
 
-        isRunning = true;
-        workerThread = new Thread(() -> {
-            int iteration = 0;
-            while (isRunning) {
-                iteration++;
-                if (!checkLimits(limits, startTime, iteration)) break;
-
-                for (int i = 0; i < actions.length && isRunning; i++) {
-                    MacroAction action = actions[i];
-                    final int idx = i;
-                    SwingUtilities.invokeLater(() -> chainList.setSelectedIndex(idx)); 
-
-                    try {
-                        switch (action.type) {
-                            case MOUSE_CLICK:
-                                if (action.p1 == 999) {
-                                    doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
-                                    robot.delay(40);
-                                    doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
-                                } else {
-                                    doMouseClick(action.p1);
-                                }
-                                break;
-                            case KEY_PRESS:
-                                robot.keyPress(action.p1);
-                                robot.delay(20 + random.nextInt(30));
-                                robot.keyRelease(action.p1);
-                                break;
-                            case MOUSE_MOVE:
-                                robot.mouseMove(action.p1, action.p2);
-                                break;
-                            case DELAY:
-                                int sleepTime = getHumanizedDelay(action.p1, useHumanizer);
-                                Thread.sleep(sleepTime);
-                                break;
+        return startMacro(limits, () -> {
+            for (int i = 0; i < actions.length && isRunning; i++) {
+                MacroAction action = actions[i];
+                final int idx = i;
+                SwingUtilities.invokeLater(() -> chainList.setSelectedIndex(idx));
+                switch (action.type) {
+                    case MOUSE_CLICK:
+                        if (action.p1 == 999) {
+                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
+                            robot.delay(40);
+                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
+                        } else {
+                            doMouseClick(action.p1);
                         }
-                        Thread.sleep(5);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
                         break;
-                    }
+                    case KEY_PRESS:
+                        robot.keyPress(action.p1);
+                        robot.delay(20 + random.nextInt(30));
+                        robot.keyRelease(action.p1);
+                        break;
+                    case MOUSE_MOVE:
+                        smoothMove(action.p1, action.p2);
+                        break;
+                    case DELAY:
+                        Thread.sleep(getHumanizedDelay(action.p1, useHumanizer));
+                        break;
                 }
+                Thread.sleep(5);
             }
-            if (!isRunning) SwingUtilities.invokeLater(() -> chainList.clearSelection());
-        });
-        workerThread.start();
-        return true;
+        }, () -> SwingUtilities.invokeLater(() -> chainList.clearSelection()));
     }
 
     private boolean startPixelMacro() {
@@ -1235,49 +1453,32 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
             return false;
         }
-
-        int scanRate = pxRateSlider.getValue();
-        int tolerancePercent = pxToleranceSlider.getValue();
-        int condition = pxConditionBox.getSelectedIndex();
-        int action = pxActionBox.getSelectedIndex();
-        int targetKey = pxSelectedKey;
+        final int scanRate = pxRateSlider.getValue();
+        final int tolerancePercent = pxToleranceSlider.getValue();
+        final int condition = pxConditionBox.getSelectedIndex();
+        final int action = pxActionBox.getSelectedIndex();
+        final int targetKey = pxSelectedKey;
         final LimitConfig limits = snapshotLimits();
 
-        long startTime = System.currentTimeMillis();
-        isRunning = true;
-
-        workerThread = new Thread(() -> {
-            int iteration = 0;
-            while(isRunning) {
-                iteration++;
-                if (!checkLimits(limits, startTime, iteration)) break;
-                
-                Color current = robot.getPixelColor(pixelPoint.x, pixelPoint.y);
-                boolean isMatch = colorDistance(pixelColor, current) <= (tolerancePercent * 4.4167);
-                
-                boolean shouldTrigger = false;
-                if(condition == 0 && isMatch) shouldTrigger = true; 
-                else if(condition == 1 && !isMatch) shouldTrigger = true;
-                
-                if (shouldTrigger) {
-                     if(action == 0 || action == 1) { 
-                         robot.mouseMove(pixelPoint.x, pixelPoint.y);
-                         int mask = (action == 0) ? InputEvent.BUTTON1_DOWN_MASK : InputEvent.BUTTON3_DOWN_MASK;
-                         doMouseClick(mask);
-                     } else if(action == 2) { 
-                         robot.keyPress(targetKey);
-                         robot.delay(20 + random.nextInt(30));
-                         robot.keyRelease(targetKey);
-                     } else if(action == 3) { 
-                         Toolkit.getDefaultToolkit().beep();
-                     }
-                     try { Thread.sleep(1000); } catch(Exception e){}
+        return startMacro(limits, () -> {
+            Color current = robot.getPixelColor(pixelPoint.x, pixelPoint.y);
+            boolean isMatch = colorDistance(pixelColor, current) <= (tolerancePercent * 4.4167);
+            boolean shouldTrigger = (condition == 0 && isMatch) || (condition == 1 && !isMatch);
+            if (shouldTrigger) {
+                if (action == 0 || action == 1) {
+                    robot.mouseMove(pixelPoint.x, pixelPoint.y);
+                    doMouseClick(action == 0 ? InputEvent.BUTTON1_DOWN_MASK : InputEvent.BUTTON3_DOWN_MASK);
+                } else if (action == 2) {
+                    robot.keyPress(targetKey);
+                    robot.delay(20 + random.nextInt(30));
+                    robot.keyRelease(targetKey);
+                } else if (action == 3) {
+                    Toolkit.getDefaultToolkit().beep();
                 }
-                try { Thread.sleep(scanRate); } catch(Exception e) {}
+                Thread.sleep(1000);
             }
-        });
-        workerThread.start();
-        return true;
+            Thread.sleep(scanRate);
+        }, null);
     }
 
     private double colorDistance(Color c1, Color c2) {
@@ -1292,16 +1493,41 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         robot.mouseRelease(mask);
     }
 
+    // Mevcut konumdan (x,y)'ye insan benzeri egriyle hareket (zincir "Fareyi Tasi" icin)
+    private void smoothMove(int x, int y) {
+        Point cur = MouseInfo.getPointerInfo().getLocation();
+        int steps = MousePath.stepsFor(cur.x, cur.y, x, y);
+        for (Point p : MousePath.interpolate(cur.x, cur.y, x, y, steps)) {
+            robot.mouseMove(p.x, p.y);
+            robot.delay(2);
+        }
+    }
+
     private int getHumanizedDelay(int baseDelay, boolean useHumanizer) {
-        if (!useHumanizer || baseDelay < 5) return Math.max(1, baseDelay);
-        int variance = (int)(baseDelay * 0.15); 
-        if (variance == 0) variance = 1;
-        int offset = random.nextInt(variance * 2) - variance;
-        return Math.max(1, baseDelay + offset);
+        return Humanizer.humanizedDelay(baseDelay, useHumanizer, random);
     }
 
     @Override
     public void nativeKeyPressed(NativeKeyEvent ev) {
+        // Kayit modu: ESC kaydi durdurur, diger tuslar zincire eklenir
+        if (recording) {
+            if (ev.getKeyCode() == NativeKeyEvent.VC_ESCAPE) {
+                SwingUtilities.invokeLater(this::stopRecording);
+            } else {
+                appendRecordedDelay();
+                final int awt = ev.getRawCode(); // Windows VK ~ AWT KeyEvent VK kodlari
+                SwingUtilities.invokeLater(() -> chainModel.addElement(new MacroAction(ActionType.KEY_PRESS, awt, 0)));
+            }
+            return;
+        }
+
+        // Her zaman acik ACIL DURDURMA (panik) tusu: ESC. Yapilandirilabilir hotkey'den bagimsizdir
+        // ve degistirilemez; makro cok hizliyken garantili cikis saglar.
+        if (ev.getKeyCode() == NativeKeyEvent.VC_ESCAPE) {
+            if (isRunning) SwingUtilities.invokeLater(this::stopFromPanic);
+            return; // ESC asla hotkey olarak atanmaz / toggle tetiklemez
+        }
+
         if (listeningForHotkey) {
             triggerKey = ev.getKeyCode();
             listeningForHotkey = false;
@@ -1311,6 +1537,31 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 saveConfig();
             });
             return;
+        }
+
+        // Per-sekme hotkey atama modu
+        if (listeningForTabHotkey >= 0) {
+            final int idx = listeningForTabHotkey;
+            tabHotkey[idx] = ev.getKeyCode();
+            listeningForTabHotkey = -1;
+            SwingUtilities.invokeLater(() -> {
+                if (tabHotkeyBtns[idx] != null) {
+                    tabHotkeyBtns[idx].setText(NativeKeyEvent.getKeyText(tabHotkey[idx]));
+                    tabHotkeyBtns[idx].setForeground(UIManager.getColor("Button.foreground"));
+                }
+                saveConfig();
+            });
+            return;
+        }
+
+        // Per-sekme hotkey eslesmesi: ilgili sekmeye gecip baslat
+        if (!listeningForCoordParams && !listeningForMacroCoord && !listeningForPixelCoord) {
+            for (int i = 0; i < tabHotkey.length; i++) {
+                if (tabHotkey[i] != 0 && ev.getKeyCode() == tabHotkey[i]) {
+                    startTab(i);
+                    return;
+                }
+            }
         }
 
         if (ev.getKeyCode() == triggerKey && !listeningForCoordParams && !listeningForMacroCoord && !listeningForPixelCoord) {
@@ -1366,8 +1617,27 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             });
         }
     }
-    @Override public void nativeMousePressed(NativeMouseEvent nativeMouseEvent) {}
+    @Override public void nativeMousePressed(NativeMouseEvent e) {
+        if (!recording) return;
+        appendRecordedDelay();
+        final Point p = MouseInfo.getPointerInfo().getLocation();
+        // JNativeHook buton -> AWT InputEvent maskesi (BUTTON2=sag, BUTTON3=orta farkina dikkat)
+        final int mask;
+        if (e.getButton() == NativeMouseEvent.BUTTON2) mask = InputEvent.BUTTON3_DOWN_MASK;      // sag
+        else if (e.getButton() == NativeMouseEvent.BUTTON3) mask = InputEvent.BUTTON2_DOWN_MASK; // orta
+        else mask = InputEvent.BUTTON1_DOWN_MASK;                                                 // sol
+        SwingUtilities.invokeLater(() -> {
+            chainModel.addElement(new MacroAction(ActionType.MOUSE_MOVE, p.x, p.y));
+            chainModel.addElement(new MacroAction(ActionType.MOUSE_CLICK, mask, 0));
+        });
+    }
     @Override public void nativeMouseReleased(NativeMouseEvent nativeMouseEvent) {}
+
+    /** Surum bilgisini JAR manifest'inden (pom version) okur; IDE/class'tan calistirinca 'dev'. */
+    private static String appVersion() {
+        String v = AutoClicker.class.getPackage().getImplementationVersion();
+        return (v != null) ? v : "dev";
+    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new AutoClicker().setVisible(true));

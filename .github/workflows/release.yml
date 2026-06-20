@@ -1,0 +1,68 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+# Node 20 deprecation uyarisini engelle: JS action'lari Node 24 ile calistir
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Surum etiketi (v-onsuz)
+        id: ver
+        shell: bash
+        run: echo "v=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Fat-jar derle + test
+        run: mvn -B -ntp clean verify
+
+      - name: jpackage app-image (JRE gomulu)
+        shell: bash
+        run: |
+          jpackage --type app-image --input target --main-jar autoclicker.jar \
+            --name AutoClicker --app-version "${{ steps.ver.outputs.v }}" --dest dist \
+            --java-options "-Dfile.encoding=UTF-8"
+
+      - name: app-image'i zip'le
+        shell: bash
+        run: |
+          cd dist
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a "../AutoClicker-${{ runner.os }}.zip" "AutoClicker" >/dev/null
+          else
+            zip -r "../AutoClicker-${{ runner.os }}.zip" AutoClicker* >/dev/null
+          fi
+
+      - name: Release'e OS paketini yukle
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          generate_release_notes: true
+          files: AutoClicker-${{ runner.os }}.zip
+
+      - name: Release'e fat-jar yukle (yalnizca Linux)
+        if: runner.os == 'Linux'
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          files: target/autoclicker.jar

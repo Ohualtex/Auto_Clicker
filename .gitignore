@@ -11,11 +11,14 @@ build/
 out/
 bin/
 target/
+dist/
 
 # ────────────────────────────────────────
 # Runtime config (config.properties vb.)
 # ────────────────────────────────────────
 *.properties
+# Maven wrapper properties'i *.properties'e ragmen izlenmeli
+!.mvn/wrapper/maven-wrapper.properties
 
 # ────────────────────────────────────────
 # IDE dosyaları

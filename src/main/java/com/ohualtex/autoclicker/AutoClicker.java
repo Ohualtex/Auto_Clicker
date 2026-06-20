@@ -5,6 +5,8 @@ import com.ohualtex.autoclicker.core.Humanizer;
 import com.ohualtex.autoclicker.core.MousePath;
 import com.ohualtex.autoclicker.core.ShutdownCommand;
 import com.ohualtex.autoclicker.i18n.Lang;
+import com.ohualtex.autoclicker.model.ActionType;
+import com.ohualtex.autoclicker.model.MacroAction;
 import com.ohualtex.autoclicker.ui.Icons;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -34,28 +36,6 @@ import java.util.logging.Logger;
 
 public class AutoClicker extends JFrame implements NativeKeyListener, NativeMouseListener {
 
-
-    enum ActionType { MOUSE_CLICK, KEY_PRESS, MOUSE_MOVE, DELAY }
-    
-    static class MacroAction {
-        ActionType type;
-        int p1, p2;
-        public MacroAction(ActionType type, int p1, int p2) { this.type = type; this.p1 = p1; this.p2 = p2; }
-        public String toString() {
-            switch(type) {
-                case MOUSE_CLICK: return Lang.get("tnt_mouse") + ": " + (p1==InputEvent.BUTTON1_DOWN_MASK ? Lang.get("l_click") : p1==InputEvent.BUTTON3_DOWN_MASK ? Lang.get("r_click") : p1==999 ? Lang.get("d_click") : Lang.get("m_click"));
-                case KEY_PRESS: return Lang.get("tnt_key") + ": " + KeyEvent.getKeyText(p1);
-                case MOUSE_MOVE: return Lang.get("tnt_move") + ": X=" + p1 + ", Y=" + p2;
-                case DELAY: return Lang.get("ms_delay") + " " + p1;
-                default: return "?";
-            }
-        }
-        public String serialize() { return type.name()+":"+p1+":"+p2; }
-        public static MacroAction deserialize(String s) {
-            String[] parts = s.split(":");
-            return new MacroAction(ActionType.valueOf(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
-        }
-    }
 
     private final File configFile = resolveConfigFile();
 

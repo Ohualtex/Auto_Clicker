@@ -7,6 +7,7 @@ public final class Lang {
         d.put("st_idle", new String[]{"DURUM: BEKLIYOR", "STATUS: IDLE", "STATUS: BEREIT", "STATUT: EN ATTENTE", "STATO: IN ATTESA", "СТАТУС: ОЖИДАНИЕ"});
         d.put("st_run", new String[]{"DURUM: CALISIYOR", "STATUS: RUNNING", "STATUS: LÄUFT", "STATUT: EN COURS", "STATO: IN ESECUZIONE", "СТАТУС: РАБОТАЕТ"});
         d.put("st_lim", new String[]{"DURUM: LIMIT YENDI", "STATUS: LIMIT HIT", "STATUS: LIMIT ERREICHT", "STATUT: LIMITE", "STATO: LIMITE RAGGIUNTO", "СТАТУС: ЛИМИТ"});
+        d.put("hook_fail", new String[]{"DURUM: KISAYOL DINLENEMIYOR", "STATUS: HOTKEY UNAVAILABLE", "STATUS: HOTKEY NICHT VERFUGBAR", "STATUT: RACCOURCI INDISPONIBLE", "STATO: HOTKEY NON DISPONIBILE", "СТАТУС: ГОРЯЧАЯ КЛАВИША НЕДОСТУПНА"});
         
         d.put("t_mouse", new String[]{"Fare", "Mouse", "Maus", "Souris", "Mouse", "Мышь"});
         d.put("t_key", new String[]{"Klavye", "Keyboard", "Tastatur", "Clavier", "Tastiera", "Клавиатура"});

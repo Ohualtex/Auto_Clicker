@@ -7,6 +7,9 @@ import java.awt.event.KeyEvent;
 
 /** Zincir makrosundaki tek bir adim (tur + iki parametre). Listede toString ile gosterilir, serialize ile saklanir. */
 public class MacroAction {
+    /** MOUSE_CLICK adiminda p1 bu degerse "cift sol tik" demektir (sentinel/isaret degeri). */
+    public static final int DOUBLE_CLICK = 999;
+
     public ActionType type;
     public int p1, p2;
 
@@ -14,7 +17,7 @@ public class MacroAction {
 
     public String toString() {
         switch(type) {
-            case MOUSE_CLICK: return Lang.get("tnt_mouse") + ": " + (p1==InputEvent.BUTTON1_DOWN_MASK ? Lang.get("l_click") : p1==InputEvent.BUTTON3_DOWN_MASK ? Lang.get("r_click") : p1==999 ? Lang.get("d_click") : Lang.get("m_click"));
+            case MOUSE_CLICK: return Lang.get("tnt_mouse") + ": " + (p1==InputEvent.BUTTON1_DOWN_MASK ? Lang.get("l_click") : p1==InputEvent.BUTTON3_DOWN_MASK ? Lang.get("r_click") : p1==DOUBLE_CLICK ? Lang.get("d_click") : Lang.get("m_click"));
             case KEY_PRESS: return Lang.get("tnt_key") + ": " + KeyEvent.getKeyText(p1);
             case MOUSE_MOVE: return Lang.get("tnt_move") + ": X=" + p1 + ", Y=" + p2;
             case DELAY: return Lang.get("ms_delay") + " " + p1;

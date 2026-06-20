@@ -5,6 +5,10 @@ on:
     branches: ['**']
   pull_request:
 
+# Node 20 deprecation uyarisini engelle: JS action'lari Node 24 ile calistir
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -1,6 +1,6 @@
 package com.ohualtex.autoclicker;
 
-import com.ohualtex.autoclicker.core.ConfigPaths;
+import com.ohualtex.autoclicker.config.ConfigStore;
 import com.ohualtex.autoclicker.core.Humanizer;
 import com.ohualtex.autoclicker.core.MousePath;
 import com.ohualtex.autoclicker.core.ShutdownCommand;
@@ -37,22 +37,7 @@ import java.util.logging.Logger;
 public class AutoClicker extends JFrame implements NativeKeyListener, NativeMouseListener {
 
 
-    private final File configFile = resolveConfigFile();
-
-    // Config'i yazilabilir kullanici dizinine koyar (installer/Program Files uyumu).
-    // Eski CWD config.properties varsa bir kez tasir (geriye uyum).
-    private static File resolveConfigFile() {
-        String dirPath = ConfigPaths.configDir(
-            System.getProperty("os.name"), System.getenv("APPDATA"), System.getProperty("user.home"));
-        File dir = new File(dirPath);
-        try { dir.mkdirs(); } catch (Exception ignore) {}
-        File f = new File(dir, "config.properties");
-        File legacy = new File("config.properties");
-        if (!f.exists() && legacy.exists()) {
-            try { java.nio.file.Files.copy(legacy.toPath(), f.toPath()); } catch (Exception ignore) {}
-        }
-        return f;
-    }
+    private final ConfigStore configStore = new ConfigStore();
     private Properties props = new Properties();
 
     private volatile int triggerKey = NativeKeyEvent.VC_F6;
@@ -322,58 +307,32 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private void loadConfig() {
-        try (FileInputStream fis = new FileInputStream(configFile)) {
-            props.load(fis);
-            triggerKey = Integer.parseInt(props.getProperty("hotkey", String.valueOf(NativeKeyEvent.VC_F6)));
-        } catch (Exception e) {
-            // Ilk acilista dosya yoklugu normaldir; digerlerini bildir
-            if (!(e instanceof java.io.FileNotFoundException)) {
-                System.err.println("[AutoClicker] Config okunamadi: " + e.getMessage());
-            }
-        }
+        props = configStore.load();
+        triggerKey = Integer.parseInt(props.getProperty("hotkey", String.valueOf(NativeKeyEvent.VC_F6)));
     }
 
     private void saveConfig() {
-        writeConfigTo(configFile);
+        gatherProps();
+        configStore.store(props);
     }
 
-    // ---- Profiller (config dizininde profile-<ad>.properties) ----
-    private String sanitizeName(String n) {
-        return n.replaceAll("[^A-Za-z0-9_-]", "_");
-    }
-
-    private File profileFile(String name) {
-        return new File(configFile.getParentFile(), "profile-" + sanitizeName(name) + ".properties");
-    }
-
+    // ---- Profiller (ConfigStore: config dizininde profile-<ad>.properties) ----
     private String[] listProfiles() {
-        File dir = configFile.getParentFile();
-        File[] fs = (dir != null) ? dir.listFiles((d, n) -> n.startsWith("profile-") && n.endsWith(".properties")) : null;
-        if (fs == null) return new String[0];
-        java.util.List<String> names = new java.util.ArrayList<>();
-        for (File f : fs) {
-            String n = f.getName();
-            names.add(n.substring("profile-".length(), n.length() - ".properties".length()));
-        }
-        java.util.Collections.sort(names);
-        return names.toArray(new String[0]);
+        return configStore.listProfiles();
     }
 
     private void saveProfile(String name) {
-        writeConfigTo(profileFile(name)); // mevcut UI durumu props'a yazilip profile dosyasina kaydedilir
+        gatherProps();                       // mevcut UI durumunu props'a topla
+        configStore.saveProfile(props, name);
     }
 
     private void deleteProfile(String name) {
-        File f = profileFile(name);
-        if (f.exists()) f.delete();
+        configStore.deleteProfile(name);
     }
 
     private void loadProfile(String name) {
-        File pf = profileFile(name);
-        if (!pf.exists()) return;
-        Properties np = new Properties();
-        try (FileInputStream fis = new FileInputStream(pf)) { np.load(fis); }
-        catch (Exception e) { return; }
+        Properties np = configStore.loadProfile(name);
+        if (np == null) return;
         this.props = np;
         triggerKey = Integer.parseInt(props.getProperty("hotkey", String.valueOf(NativeKeyEvent.VC_F6)));
         Lang.L = Integer.parseInt(props.getProperty("langIndex", "0"));
@@ -392,10 +351,10 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         if (selectName != null) profileBox.setSelectedItem(selectName);
     }
 
-    private void writeConfigTo(File target) {
-        try (FileOutputStream fos = new FileOutputStream(target)) {
+    // UI durumunu props'a toplar (dosyaya yazma ConfigStore'da)
+    private void gatherProps() {
             props.setProperty("hotkey", String.valueOf(triggerKey));
-            
+
             props.setProperty("mouseCps", String.valueOf(mouseCpsSlider.getValue()));
             props.setProperty("mouseBtn", String.valueOf(mouseBtnBox.getSelectedIndex()));
             props.setProperty("mouseHumanizer", String.valueOf(mouseHumanizerBox.isSelected()));
@@ -453,11 +412,6 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             for (int i = 0; i < tabHotkey.length; i++) {
                 props.setProperty("tabHotkey" + i, String.valueOf(tabHotkey[i]));
             }
-
-            props.store(fos, "AutoClicker Configuration");
-        } catch (Exception e) {
-            System.err.println("[AutoClicker] Config kaydedilemedi: " + e.getMessage());
-        }
     }
 
     private void initUI() {

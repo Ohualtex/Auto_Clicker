@@ -195,6 +195,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     // UI
     private JLabel statusLabel;
     private JButton hotkeyBtn;
+    private JTabbedPane tabbedPane;
     
     // Limits
     private JCheckBox useLimitBox;
@@ -344,7 +345,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private void rebuildUI() {
-        JTabbedPane tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
+        JTabbedPane tabs = tabbedPane;
         int currentTab = (tabs != null) ? tabs.getSelectedIndex() : 0;
         int scrollVal = 0;
         if (currentTab == 4 && tabs != null) {
@@ -357,7 +358,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         applyInitialTheme(); 
         initUI();
 
-        tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
+        tabs = tabbedPane;
         if (tabs != null) {
             tabs.setSelectedIndex(currentTab);
             if (currentTab == 4) {
@@ -647,7 +648,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         statusLabel.setForeground(new Color(255, 90, 90));
         headerPanel.add(statusLabel);
 
-        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         tabbedPane.addTab(Lang.get("t_mouse"), new MouseIcon(), buildMousePanel());
         tabbedPane.addTab(Lang.get("t_key"), new KeyIcon(), buildKeyboardPanel());
@@ -1501,7 +1502,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
 
     // Aktif sekmenin makrosunu baslatir ve durumu gunceller (toggle ve zamanlayici kullanir)
     private void startActiveTab() {
-        JTabbedPane tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
+        JTabbedPane tabs = tabbedPane;
         int selectedTab = tabs.getSelectedIndex();
 
         boolean started;
@@ -1524,7 +1525,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     private void startTab(int index) {
         SwingUtilities.invokeLater(() -> {
             if (scheduleTimer != null || isRunning) { toggle(); return; }
-            JTabbedPane tabs = (JTabbedPane) ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
+            JTabbedPane tabs = tabbedPane;
             if (tabs == null || index < 0 || index >= 4) return;
             tabs.setSelectedIndex(index);
             toggle();

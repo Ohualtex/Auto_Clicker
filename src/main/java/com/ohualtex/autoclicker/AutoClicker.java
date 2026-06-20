@@ -27,8 +27,6 @@ import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.util.Properties;
 import java.util.Random;
 import java.util.logging.Level;
@@ -303,7 +301,9 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 statusLabel.setFont(new Font("Segoe UI", Font.BOLD, fontSize + 8));
                 statusLabel.setForeground(isRunning ? new Color(90, 255, 90) : new Color(255, 90, 90));
             }
-        } catch (Exception ex) { ex.printStackTrace(); }
+        } catch (Exception ex) {
+            System.err.println("[AutoClicker] Tema/font uygulanamadi: " + ex.getMessage());
+        }
     }
 
     private void loadConfig() {
@@ -885,14 +885,19 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 int mask = InputEvent.BUTTON1_DOWN_MASK;
                 if(mIdx==1) mask = InputEvent.BUTTON3_DOWN_MASK;
                 else if(mIdx==2) mask = InputEvent.BUTTON2_DOWN_MASK;
-                else if(mIdx==3) mask = 999;
+                else if(mIdx==3) mask = MacroAction.DOUBLE_CLICK;
                 chainModel.addElement(new MacroAction(ActionType.MOUSE_CLICK, mask, 0));
             } else if(t==1) {
                 chainModel.addElement(new MacroAction(ActionType.KEY_PRESS, selectedActKey[0], 0));
             } else if(t==2) {
                 chainModel.addElement(new MacroAction(ActionType.MOUSE_MOVE, macroTempPt.x, macroTempPt.y));
             } else if(t==3) {
-                try { chainModel.addElement(new MacroAction(ActionType.DELAY, Integer.parseInt(delayField.getText()), 0)); } catch(Exception ex) {}
+                try {
+                    chainModel.addElement(new MacroAction(ActionType.DELAY, Integer.parseInt(delayField.getText().trim()), 0));
+                } catch (Exception ex) {
+                    Toolkit.getDefaultToolkit().beep(); // gecersiz sayi: sessizce yutma, kullaniciya bildir
+                    return;
+                }
             }
             dialog.dispose();
         });
@@ -1126,7 +1131,16 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             GlobalScreen.registerNativeHook();
             GlobalScreen.addNativeKeyListener(this);
             GlobalScreen.addNativeMouseListener(this);
-        } catch (NativeHookException e) {}
+        } catch (NativeHookException e) {
+            // Kanca kurulamazsa hotkey + record calismaz; sessiz kalma, kullaniciya bildir
+            System.err.println("[AutoClicker] Global kanca (JNativeHook) kurulamadi: " + e.getMessage());
+            SwingUtilities.invokeLater(() -> {
+                if (statusLabel != null) {
+                    statusLabel.setText(Lang.get("hook_fail"));
+                    statusLabel.setForeground(new Color(255, 165, 0));
+                }
+            });
+        }
     }
 
     // Limit ayarlarinin worker thread'e gecirilecek anlik kopyasi (EDT-disi Swing erisimini onler)
@@ -1423,7 +1437,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 SwingUtilities.invokeLater(() -> chainList.setSelectedIndex(idx));
                 switch (action.type) {
                     case MOUSE_CLICK:
-                        if (action.p1 == 999) {
+                        if (action.p1 == MacroAction.DOUBLE_CLICK) {
                             doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
                             robot.delay(40);
                             doMouseClick(InputEvent.BUTTON1_DOWN_MASK);

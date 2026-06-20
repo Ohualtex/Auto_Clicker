@@ -1337,80 +1337,72 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
         scheduleTimer.start();
     }
 
-    private boolean startMouseMacro() {
-        int cps = mouseCpsSlider.getValue();
-        int baseDelay = 1000 / Math.max(cps, 1);
-        int mode = mouseBtnBox.getSelectedIndex(); 
-        boolean useHumanizer = mouseHumanizerBox.isSelected();
-        boolean useCoord = targetCoordBox.isSelected() && targetPoint != null;
-        final LimitConfig limits = snapshotLimits();
+    // Tek iterasyonun govdesi (Strategy). InterruptedException firlatabilir; motor yakalar.
+    @FunctionalInterface
+    private interface MacroBody { void iterate() throws InterruptedException; }
 
-        long startTime = System.currentTimeMillis();
-
+    // Ortak makro motoru: worker thread + while(isRunning) + iterasyon sayaci + limit kontrolu.
+    // body her dongude calisir; onEnd (varsa) dongu bittiginde calisir. Tum start*Macro bunu kullanir.
+    private boolean startMacro(LimitConfig limits, MacroBody body, Runnable onEnd) {
+        final long startTime = System.currentTimeMillis();
         isRunning = true;
         workerThread = new Thread(() -> {
             int iteration = 0;
             while (isRunning) {
                 iteration++;
                 if (!checkLimits(limits, startTime, iteration)) break;
-
                 try {
-                    if (useCoord) {
-                        robot.mouseMove(targetPoint.x, targetPoint.y);
-                    }
-                    
-                    switch (mode) {
-                        case 0: doMouseClick(InputEvent.BUTTON1_DOWN_MASK); break;
-                        case 1: doMouseClick(InputEvent.BUTTON3_DOWN_MASK); break;
-                        case 2: doMouseClick(InputEvent.BUTTON2_DOWN_MASK); break;
-                        case 3: 
-                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
-                            robot.delay(40);
-                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
-                            break;
-                    }
-                    
-                    int sleepTime = getHumanizedDelay(baseDelay, useHumanizer);
-                    Thread.sleep(sleepTime);
-                } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                    body.iterate();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
             }
-        });
+            if (onEnd != null) onEnd.run();
+        }, "AutoClicker-Macro");
         workerThread.start();
         return true;
     }
 
+    private boolean startMouseMacro() {
+        final int baseDelay = 1000 / Math.max(mouseCpsSlider.getValue(), 1);
+        final int mode = mouseBtnBox.getSelectedIndex();
+        final boolean useHumanizer = mouseHumanizerBox.isSelected();
+        final boolean useCoord = targetCoordBox.isSelected() && targetPoint != null;
+        final LimitConfig limits = snapshotLimits();
+
+        return startMacro(limits, () -> {
+            if (useCoord) robot.mouseMove(targetPoint.x, targetPoint.y);
+            switch (mode) {
+                case 0: doMouseClick(InputEvent.BUTTON1_DOWN_MASK); break;
+                case 1: doMouseClick(InputEvent.BUTTON3_DOWN_MASK); break;
+                case 2: doMouseClick(InputEvent.BUTTON2_DOWN_MASK); break;
+                case 3:
+                    doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
+                    robot.delay(40);
+                    doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
+                    break;
+            }
+            Thread.sleep(getHumanizedDelay(baseDelay, useHumanizer));
+        }, null);
+    }
+
     private boolean startKeyMacro() {
-        int cps = keyCpsSlider.getValue();
-        int baseDelay = Math.max(1, 1000 / cps);
-        boolean useHumanizer = keyHumanizerBox.isSelected();
+        final int baseDelay = Math.max(1, 1000 / keyCpsSlider.getValue());
+        final boolean useHumanizer = keyHumanizerBox.isSelected();
         final int targetKey = selectedNativeKeyCode;
         final LimitConfig limits = snapshotLimits();
 
-        long startTime = System.currentTimeMillis();
-
-        isRunning = true;
-        workerThread = new Thread(() -> {
-            int iteration = 0;
-            while (isRunning) {
-                iteration++;
-                if (!checkLimits(limits, startTime, iteration)) break;
-
-                try {
-                    // press->release araligini kisa tut ve CPS butcesinden dus ki gercek hiz hedefe yapissin
-                    int releaseGap = Math.min(baseDelay / 2, 5 + random.nextInt(10));
-                    if (releaseGap < 2) releaseGap = 2;
-                    robot.keyPress(targetKey);
-                    robot.delay(releaseGap);
-                    robot.keyRelease(targetKey);
-
-                    int remaining = Math.max(1, baseDelay - releaseGap);
-                    int sleepTime = getHumanizedDelay(remaining, useHumanizer);
-                    Thread.sleep(sleepTime);
-                } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-            }
-        });
-        workerThread.start();
-        return true;
+        return startMacro(limits, () -> {
+            // press->release araligini kisa tut ve CPS butcesinden dus ki gercek hiz hedefe yapissin
+            int releaseGap = Math.min(baseDelay / 2, 5 + random.nextInt(10));
+            if (releaseGap < 2) releaseGap = 2;
+            robot.keyPress(targetKey);
+            robot.delay(releaseGap);
+            robot.keyRelease(targetKey);
+            int remaining = Math.max(1, baseDelay - releaseGap);
+            Thread.sleep(getHumanizedDelay(remaining, useHumanizer));
+        }, null);
     }
 
     private boolean startChainMacro() {
@@ -1418,61 +1410,42 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
             return false;
         }
-
-        boolean useHumanizer = chainHumanizerBox.isSelected();
+        final boolean useHumanizer = chainHumanizerBox.isSelected();
         final LimitConfig limits = snapshotLimits();
         // Worker thread'in DefaultListModel'a EDT-disi erismesini onlemek icin diziye snapshot al
         final MacroAction[] actions = new MacroAction[chainModel.getSize()];
         for (int i = 0; i < actions.length; i++) actions[i] = chainModel.get(i);
-        long startTime = System.currentTimeMillis();
 
-        isRunning = true;
-        workerThread = new Thread(() -> {
-            int iteration = 0;
-            while (isRunning) {
-                iteration++;
-                if (!checkLimits(limits, startTime, iteration)) break;
-
-                for (int i = 0; i < actions.length && isRunning; i++) {
-                    MacroAction action = actions[i];
-                    final int idx = i;
-                    SwingUtilities.invokeLater(() -> chainList.setSelectedIndex(idx)); 
-
-                    try {
-                        switch (action.type) {
-                            case MOUSE_CLICK:
-                                if (action.p1 == 999) {
-                                    doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
-                                    robot.delay(40);
-                                    doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
-                                } else {
-                                    doMouseClick(action.p1);
-                                }
-                                break;
-                            case KEY_PRESS:
-                                robot.keyPress(action.p1);
-                                robot.delay(20 + random.nextInt(30));
-                                robot.keyRelease(action.p1);
-                                break;
-                            case MOUSE_MOVE:
-                                smoothMove(action.p1, action.p2);
-                                break;
-                            case DELAY:
-                                int sleepTime = getHumanizedDelay(action.p1, useHumanizer);
-                                Thread.sleep(sleepTime);
-                                break;
+        return startMacro(limits, () -> {
+            for (int i = 0; i < actions.length && isRunning; i++) {
+                MacroAction action = actions[i];
+                final int idx = i;
+                SwingUtilities.invokeLater(() -> chainList.setSelectedIndex(idx));
+                switch (action.type) {
+                    case MOUSE_CLICK:
+                        if (action.p1 == 999) {
+                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
+                            robot.delay(40);
+                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
+                        } else {
+                            doMouseClick(action.p1);
                         }
-                        Thread.sleep(5);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
                         break;
-                    }
+                    case KEY_PRESS:
+                        robot.keyPress(action.p1);
+                        robot.delay(20 + random.nextInt(30));
+                        robot.keyRelease(action.p1);
+                        break;
+                    case MOUSE_MOVE:
+                        smoothMove(action.p1, action.p2);
+                        break;
+                    case DELAY:
+                        Thread.sleep(getHumanizedDelay(action.p1, useHumanizer));
+                        break;
                 }
+                Thread.sleep(5);
             }
-            if (!isRunning) SwingUtilities.invokeLater(() -> chainList.clearSelection());
-        });
-        workerThread.start();
-        return true;
+        }, () -> SwingUtilities.invokeLater(() -> chainList.clearSelection()));
     }
 
     private boolean startPixelMacro() {
@@ -1480,49 +1453,32 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             SwingUtilities.invokeLater(() -> Toolkit.getDefaultToolkit().beep());
             return false;
         }
-
-        int scanRate = pxRateSlider.getValue();
-        int tolerancePercent = pxToleranceSlider.getValue();
-        int condition = pxConditionBox.getSelectedIndex();
-        int action = pxActionBox.getSelectedIndex();
-        int targetKey = pxSelectedKey;
+        final int scanRate = pxRateSlider.getValue();
+        final int tolerancePercent = pxToleranceSlider.getValue();
+        final int condition = pxConditionBox.getSelectedIndex();
+        final int action = pxActionBox.getSelectedIndex();
+        final int targetKey = pxSelectedKey;
         final LimitConfig limits = snapshotLimits();
 
-        long startTime = System.currentTimeMillis();
-        isRunning = true;
-
-        workerThread = new Thread(() -> {
-            int iteration = 0;
-            while(isRunning) {
-                iteration++;
-                if (!checkLimits(limits, startTime, iteration)) break;
-                
-                Color current = robot.getPixelColor(pixelPoint.x, pixelPoint.y);
-                boolean isMatch = colorDistance(pixelColor, current) <= (tolerancePercent * 4.4167);
-                
-                boolean shouldTrigger = false;
-                if(condition == 0 && isMatch) shouldTrigger = true; 
-                else if(condition == 1 && !isMatch) shouldTrigger = true;
-                
-                if (shouldTrigger) {
-                     if(action == 0 || action == 1) { 
-                         robot.mouseMove(pixelPoint.x, pixelPoint.y);
-                         int mask = (action == 0) ? InputEvent.BUTTON1_DOWN_MASK : InputEvent.BUTTON3_DOWN_MASK;
-                         doMouseClick(mask);
-                     } else if(action == 2) { 
-                         robot.keyPress(targetKey);
-                         robot.delay(20 + random.nextInt(30));
-                         robot.keyRelease(targetKey);
-                     } else if(action == 3) { 
-                         Toolkit.getDefaultToolkit().beep();
-                     }
-                     try { Thread.sleep(1000); } catch(Exception e){}
+        return startMacro(limits, () -> {
+            Color current = robot.getPixelColor(pixelPoint.x, pixelPoint.y);
+            boolean isMatch = colorDistance(pixelColor, current) <= (tolerancePercent * 4.4167);
+            boolean shouldTrigger = (condition == 0 && isMatch) || (condition == 1 && !isMatch);
+            if (shouldTrigger) {
+                if (action == 0 || action == 1) {
+                    robot.mouseMove(pixelPoint.x, pixelPoint.y);
+                    doMouseClick(action == 0 ? InputEvent.BUTTON1_DOWN_MASK : InputEvent.BUTTON3_DOWN_MASK);
+                } else if (action == 2) {
+                    robot.keyPress(targetKey);
+                    robot.delay(20 + random.nextInt(30));
+                    robot.keyRelease(targetKey);
+                } else if (action == 3) {
+                    Toolkit.getDefaultToolkit().beep();
                 }
-                try { Thread.sleep(scanRate); } catch(Exception e) {}
+                Thread.sleep(1000);
             }
-        });
-        workerThread.start();
-        return true;
+            Thread.sleep(scanRate);
+        }, null);
     }
 
     private double colorDistance(Color c1, Color c2) {

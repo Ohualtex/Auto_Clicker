@@ -19,6 +19,8 @@ dist/
 *.properties
 # Maven wrapper properties'i *.properties'e ragmen izlenmeli
 !.mvn/wrapper/maven-wrapper.properties
+# i18n ceviri kaynaklari *.properties'e ragmen izlenmeli
+!src/main/resources/i18n/messages*.properties
 
 # ────────────────────────────────────────
 # IDE dosyaları

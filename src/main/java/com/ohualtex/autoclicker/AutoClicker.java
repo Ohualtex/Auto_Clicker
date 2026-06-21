@@ -8,6 +8,7 @@ import com.ohualtex.autoclicker.i18n.Lang;
 import com.ohualtex.autoclicker.model.ActionType;
 import com.ohualtex.autoclicker.model.MacroAction;
 import com.ohualtex.autoclicker.ui.Icons;
+import com.ohualtex.autoclicker.ui.Widgets;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -226,15 +227,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private JButton createInfoButton(String tooltipKey) {
-        JButton btn = new JButton(new Icons.InfoIcon());
-        btn.setMargin(new Insets(0,0,0,0));
-        btn.setBorderPainted(false);
-        btn.setContentAreaFilled(false);
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setToolTipText("<html><p width=\"250\">" + Lang.get(tooltipKey) + "</p></html>");
-        btn.addActionListener(e -> JOptionPane.showMessageDialog(this, Lang.get(tooltipKey), Lang.get("info_title"), JOptionPane.INFORMATION_MESSAGE));
-        return btn;
+        return Widgets.infoButton(this, tooltipKey);
     }
 
     private void applyColorsRecursively(Component c, Color color) {
@@ -1091,37 +1084,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private JPanel createCpsPanel(String title, String defaultVal, int max, String infoKey, java.util.function.Consumer<JSlider> setSlider) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createTitledBorder(title));
-
-        JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JSlider slider = new JSlider(1, max, Integer.parseInt(defaultVal));
-        JTextField field = new JTextField(defaultVal, 5);
-        
-        slider.addChangeListener(e -> field.setText(String.valueOf(slider.getValue())));
-        field.addKeyListener(new KeyAdapter() {
-            public void keyReleased(KeyEvent e) {
-                boolean ok = false;
-                try {
-                    int val = Integer.parseInt(field.getText().trim());
-                    if (val >= slider.getMinimum() && val <= max) { slider.setValue(val); ok = true; }
-                } catch (Exception ex) { }
-                // Bos alan notr; gecersiz/araliga sigmayan deger kirmizi cerceve
-                field.putClientProperty("JComponent.outline", (ok || field.getText().trim().isEmpty()) ? null : "error");
-                field.repaint();
-            }
-        });
-
-        setSlider.accept(slider);
-
-        inputPanel.add(slider);
-        inputPanel.add(field);
-        if (infoKey != null) {
-            inputPanel.add(createInfoButton(infoKey));
-        }
-        panel.add(inputPanel);
-        return panel;
+        return Widgets.cpsPanel(this, title, defaultVal, max, infoKey, setSlider);
     }
 
     private void initJNativeHook() {

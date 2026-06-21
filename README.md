@@ -125,6 +125,26 @@ com.ohualtex.autoclicker
 
 ---
 
+## 🔒 Güvenlik & Doğrulama
+
+Release dosyaları **kod imzalı değildir** (ücretsiz dağıtım); bunun yerine her dosya için **SHA-256 checksum** (`*.sha256`) yayınlanır.
+
+**Bütünlüğü doğrula:**
+```bash
+# Linux/macOS
+shasum -a 256 -c AutoClicker-Linux.zip.sha256
+# Windows (PowerShell)
+(Get-FileHash AutoClicker-Windows.zip -Algorithm SHA256).Hash
+```
+
+**İşletim sistemi uyarısını aşma** (imzasız olduğu için normaldir):
+- **Windows SmartScreen:** *"Daha fazla bilgi" → "Yine de çalıştır"*
+- **macOS Gatekeeper:** *Sistem Ayarları → Gizlilik ve Güvenlik → "Yine de Aç"*, veya `xattr -dr com.apple.quarantine AutoClicker.app`
+
+İlk çalıştırmada uygulama bir **sorumlu-kullanım onayı** ister ve **GitHub'dan yeni sürüm** olup olmadığını arka planda kontrol eder (config'de `checkUpdates=false` ile kapatılabilir).
+
+---
+
 ## 📌 Notlar & Uyumluluk
 
 - **Ayar konumu:** Ayarlar `%APPDATA%\AutoClicker\config.properties` (Windows) veya `~/.autoclicker/` (macOS/Linux) altında saklanır; installer ile kurulumda bile yazılabilir.

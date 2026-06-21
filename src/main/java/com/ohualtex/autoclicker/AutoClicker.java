@@ -8,6 +8,7 @@ import com.ohualtex.autoclicker.i18n.Lang;
 import com.ohualtex.autoclicker.model.ActionType;
 import com.ohualtex.autoclicker.model.MacroAction;
 import com.ohualtex.autoclicker.ui.Icons;
+import com.ohualtex.autoclicker.ui.Widgets;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -149,6 +150,66 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 saveConfig();
             }
         });
+
+        checkConsent();     // ilk calistirmada sorumlu-kullanim onayi (kabul edilmezse cikar)
+        checkForUpdate();   // arka planda surum kontrolu (best-effort, sessiz)
+    }
+
+    // Ilk calistirmada sorumlu-kullanim/yasal sorumluluk reddi onayi; bir kez gosterilir
+    private void checkConsent() {
+        if (Boolean.parseBoolean(props.getProperty("consentAccepted", "false"))) return;
+        int r = JOptionPane.showConfirmDialog(this, Lang.get("consent_msg"), Lang.get("consent_title"),
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (r != JOptionPane.OK_OPTION) { System.exit(0); }
+        props.setProperty("consentAccepted", "true");
+        saveConfig();
+    }
+
+    // GitHub Releases'i kontrol eder; daha yeni surum varsa kullaniciya bildirir (arka plan, best-effort)
+    private void checkForUpdate() {
+        if (!Boolean.parseBoolean(props.getProperty("checkUpdates", "true"))) return;
+        Thread t = new Thread(() -> {
+            try {
+                java.net.http.HttpClient c = java.net.http.HttpClient.newHttpClient();
+                java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+                        .uri(java.net.URI.create("https://api.github.com/repos/Ohualtex/Auto_Clicker/releases/latest"))
+                        .header("Accept", "application/vnd.github+json")
+                        .timeout(java.time.Duration.ofSeconds(6)).build();
+                String body = c.send(req, java.net.http.HttpResponse.BodyHandlers.ofString()).body();
+                String tag = new com.google.gson.JsonParser().parse(body).getAsJsonObject().get("tag_name").getAsString();
+                String latest = tag.startsWith("v") ? tag.substring(1) : tag;
+                if (isNewer(latest, appVersion())) {
+                    SwingUtilities.invokeLater(() -> {
+                        int r = JOptionPane.showConfirmDialog(this,
+                                String.format(Lang.get("update_msg"), latest, appVersion()),
+                                Lang.get("update_title"), JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
+                        if (r == JOptionPane.YES_OPTION) openReleasesPage();
+                    });
+                }
+            } catch (Exception ignore) { /* ag/parse hatasi: sessiz */ }
+        }, "AutoClicker-UpdateCheck");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    // "8.10" > "8.9" gibi sayisal-parcali surum karsilastirmasi
+    static boolean isNewer(String latest, String current) {
+        try {
+            String[] a = latest.split("\\."), b = current.split("\\.");
+            int n = Math.max(a.length, b.length);
+            for (int i = 0; i < n; i++) {
+                int x = i < a.length ? Integer.parseInt(a[i].trim()) : 0;
+                int y = i < b.length ? Integer.parseInt(b[i].trim()) : 0;
+                if (x != y) return x > y;
+            }
+            return false;
+        } catch (Exception e) { return false; }
+    }
+
+    private void openReleasesPage() {
+        try {
+            Desktop.getDesktop().browse(java.net.URI.create("https://github.com/Ohualtex/Auto_Clicker/releases/latest"));
+        } catch (Exception ignore) {}
     }
 
     // Sistem tepsisi ikonu: simge durumuna kuculunce gizle, tray menusunden goster/baslat-durdur/cikis
@@ -226,15 +287,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private JButton createInfoButton(String tooltipKey) {
-        JButton btn = new JButton(new Icons.InfoIcon());
-        btn.setMargin(new Insets(0,0,0,0));
-        btn.setBorderPainted(false);
-        btn.setContentAreaFilled(false);
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setToolTipText("<html><p width=\"250\">" + Lang.get(tooltipKey) + "</p></html>");
-        btn.addActionListener(e -> JOptionPane.showMessageDialog(this, Lang.get(tooltipKey), Lang.get("info_title"), JOptionPane.INFORMATION_MESSAGE));
-        return btn;
+        return Widgets.infoButton(this, tooltipKey);
     }
 
     private void applyColorsRecursively(Component c, Color color) {
@@ -882,11 +935,14 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             int t = typeBox.getSelectedIndex();
             if(t==0) {
                 int mIdx = mouseBox.getSelectedIndex();
-                int mask = InputEvent.BUTTON1_DOWN_MASK;
-                if(mIdx==1) mask = InputEvent.BUTTON3_DOWN_MASK;
-                else if(mIdx==2) mask = InputEvent.BUTTON2_DOWN_MASK;
-                else if(mIdx==3) mask = MacroAction.DOUBLE_CLICK;
-                chainModel.addElement(new MacroAction(ActionType.MOUSE_CLICK, mask, 0));
+                if (mIdx == 3) {
+                    chainModel.addElement(new MacroAction(ActionType.MOUSE_DOUBLE_CLICK, 0, 0));
+                } else {
+                    int mask = InputEvent.BUTTON1_DOWN_MASK;
+                    if(mIdx==1) mask = InputEvent.BUTTON3_DOWN_MASK;
+                    else if(mIdx==2) mask = InputEvent.BUTTON2_DOWN_MASK;
+                    chainModel.addElement(new MacroAction(ActionType.MOUSE_CLICK, mask, 0));
+                }
             } else if(t==1) {
                 chainModel.addElement(new MacroAction(ActionType.KEY_PRESS, selectedActKey[0], 0));
             } else if(t==2) {
@@ -1088,37 +1144,7 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
     }
 
     private JPanel createCpsPanel(String title, String defaultVal, int max, String infoKey, java.util.function.Consumer<JSlider> setSlider) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createTitledBorder(title));
-
-        JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JSlider slider = new JSlider(1, max, Integer.parseInt(defaultVal));
-        JTextField field = new JTextField(defaultVal, 5);
-        
-        slider.addChangeListener(e -> field.setText(String.valueOf(slider.getValue())));
-        field.addKeyListener(new KeyAdapter() {
-            public void keyReleased(KeyEvent e) {
-                boolean ok = false;
-                try {
-                    int val = Integer.parseInt(field.getText().trim());
-                    if (val >= slider.getMinimum() && val <= max) { slider.setValue(val); ok = true; }
-                } catch (Exception ex) { }
-                // Bos alan notr; gecersiz/araliga sigmayan deger kirmizi cerceve
-                field.putClientProperty("JComponent.outline", (ok || field.getText().trim().isEmpty()) ? null : "error");
-                field.repaint();
-            }
-        });
-
-        setSlider.accept(slider);
-
-        inputPanel.add(slider);
-        inputPanel.add(field);
-        if (infoKey != null) {
-            inputPanel.add(createInfoButton(infoKey));
-        }
-        panel.add(inputPanel);
-        return panel;
+        return Widgets.cpsPanel(this, title, defaultVal, max, infoKey, setSlider);
     }
 
     private void initJNativeHook() {
@@ -1437,13 +1463,12 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 SwingUtilities.invokeLater(() -> chainList.setSelectedIndex(idx));
                 switch (action.type) {
                     case MOUSE_CLICK:
-                        if (action.p1 == MacroAction.DOUBLE_CLICK) {
-                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
-                            robot.delay(40);
-                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
-                        } else {
-                            doMouseClick(action.p1);
-                        }
+                        doMouseClick(action.p1);
+                        break;
+                    case MOUSE_DOUBLE_CLICK:
+                        doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
+                        robot.delay(40);
+                        doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
                         break;
                     case KEY_PRESS:
                         robot.keyPress(action.p1);

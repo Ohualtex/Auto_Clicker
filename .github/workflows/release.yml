@@ -36,6 +36,13 @@ jobs:
       - name: Fat-jar derle + test
         run: mvn -B -ntp clean verify
 
+      - name: Installer araclari (best-effort)
+        continue-on-error: true
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then choco install wixtoolset -y --no-progress || true; fi
+          if [ "${{ runner.os }}" = "Linux" ]; then sudo apt-get update && sudo apt-get install -y fakeroot || true; fi
+
       - name: jpackage app-image (JRE gomulu)
         shell: bash
         run: |
@@ -53,16 +60,48 @@ jobs:
             zip -r "../AutoClicker-${{ runner.os }}.zip" AutoClicker* >/dev/null
           fi
 
-      - name: Release'e OS paketini yukle
+      - name: jpackage native installer (msi/dmg/deb) - best-effort
+        id: installer
+        continue-on-error: true
+        shell: bash
+        run: |
+          case "${{ runner.os }}" in
+            Windows) T=msi ;;
+            macOS)   T=dmg ;;
+            Linux)   T=deb ;;
+          esac
+          jpackage --type "$T" --input target --main-jar autoclicker.jar \
+            --name AutoClicker --app-version "${{ steps.ver.outputs.v }}" --dest installer \
+            --java-options "-Dfile.encoding=UTF-8"
+
+      - name: Yayim dosyalari + SHA-256 checksum
+        shell: bash
+        run: |
+          mkdir -p out
+          cp "AutoClicker-${{ runner.os }}.zip" out/ 2>/dev/null || true
+          if [ -d installer ]; then cp installer/* out/ 2>/dev/null || true; fi
+          if [ "${{ runner.os }}" = "Linux" ]; then cp target/autoclicker.jar out/ 2>/dev/null || true; fi
+          cd out
+          for f in *; do
+            [ -f "$f" ] || continue
+            if command -v sha256sum >/dev/null 2>&1; then sha256sum "$f" > "$f.sha256"; else shasum -a 256 "$f" > "$f.sha256"; fi
+          done
+          ls -la
+
+      # ---- KOD IMZALAMA (opsiyonel - SERTIFIKA gerektirir) ----
+      # Ucretsiz yol: yukaridaki SHA-256 checksum'lar butunluk dogrulamasi saglar (imza degil).
+      # Imzalamak icin repo Settings > Secrets'a sertifikalari ekleyip asagidaki adimlari etkinlestirin:
+      #   Windows: WIN_CERT_BASE64 (.pfx -> base64), WIN_CERT_PASSWORD
+      #   - name: Windows imzala (jsign)
+      #     if: runner.os == 'Windows'
+      #     shell: bash
+      #     run: |
+      #       echo "${{ secrets.WIN_CERT_BASE64 }}" | base64 -d > cert.pfx
+      #       for f in out/*.msi; do jsign --storetype PKCS12 --keystore cert.pfx --storepass "${{ secrets.WIN_CERT_PASSWORD }}" "$f"; done
+      #   macOS: APPLE_DEV_ID sertifikasi import + codesign + 'xcrun notarytool submit --wait' ile imzala/notarize.
+      - name: Release'e yukle
         uses: softprops/action-gh-release@v2
         with:
           prerelease: true
           generate_release_notes: true
-          files: AutoClicker-${{ runner.os }}.zip
-
-      - name: Release'e fat-jar yukle (yalnizca Linux)
-        if: runner.os == 'Linux'
-        uses: softprops/action-gh-release@v2
-        with:
-          prerelease: true
-          files: target/autoclicker.jar
+          files: out/*

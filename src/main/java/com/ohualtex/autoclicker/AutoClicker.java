@@ -882,11 +882,14 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
             int t = typeBox.getSelectedIndex();
             if(t==0) {
                 int mIdx = mouseBox.getSelectedIndex();
-                int mask = InputEvent.BUTTON1_DOWN_MASK;
-                if(mIdx==1) mask = InputEvent.BUTTON3_DOWN_MASK;
-                else if(mIdx==2) mask = InputEvent.BUTTON2_DOWN_MASK;
-                else if(mIdx==3) mask = MacroAction.DOUBLE_CLICK;
-                chainModel.addElement(new MacroAction(ActionType.MOUSE_CLICK, mask, 0));
+                if (mIdx == 3) {
+                    chainModel.addElement(new MacroAction(ActionType.MOUSE_DOUBLE_CLICK, 0, 0));
+                } else {
+                    int mask = InputEvent.BUTTON1_DOWN_MASK;
+                    if(mIdx==1) mask = InputEvent.BUTTON3_DOWN_MASK;
+                    else if(mIdx==2) mask = InputEvent.BUTTON2_DOWN_MASK;
+                    chainModel.addElement(new MacroAction(ActionType.MOUSE_CLICK, mask, 0));
+                }
             } else if(t==1) {
                 chainModel.addElement(new MacroAction(ActionType.KEY_PRESS, selectedActKey[0], 0));
             } else if(t==2) {
@@ -1437,13 +1440,12 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 SwingUtilities.invokeLater(() -> chainList.setSelectedIndex(idx));
                 switch (action.type) {
                     case MOUSE_CLICK:
-                        if (action.p1 == MacroAction.DOUBLE_CLICK) {
-                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
-                            robot.delay(40);
-                            doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
-                        } else {
-                            doMouseClick(action.p1);
-                        }
+                        doMouseClick(action.p1);
+                        break;
+                    case MOUSE_DOUBLE_CLICK:
+                        doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
+                        robot.delay(40);
+                        doMouseClick(InputEvent.BUTTON1_DOWN_MASK);
                         break;
                     case KEY_PRESS:
                         robot.keyPress(action.p1);

@@ -150,6 +150,66 @@ public class AutoClicker extends JFrame implements NativeKeyListener, NativeMous
                 saveConfig();
             }
         });
+
+        checkConsent();     // ilk calistirmada sorumlu-kullanim onayi (kabul edilmezse cikar)
+        checkForUpdate();   // arka planda surum kontrolu (best-effort, sessiz)
+    }
+
+    // Ilk calistirmada sorumlu-kullanim/yasal sorumluluk reddi onayi; bir kez gosterilir
+    private void checkConsent() {
+        if (Boolean.parseBoolean(props.getProperty("consentAccepted", "false"))) return;
+        int r = JOptionPane.showConfirmDialog(this, Lang.get("consent_msg"), Lang.get("consent_title"),
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (r != JOptionPane.OK_OPTION) { System.exit(0); }
+        props.setProperty("consentAccepted", "true");
+        saveConfig();
+    }
+
+    // GitHub Releases'i kontrol eder; daha yeni surum varsa kullaniciya bildirir (arka plan, best-effort)
+    private void checkForUpdate() {
+        if (!Boolean.parseBoolean(props.getProperty("checkUpdates", "true"))) return;
+        Thread t = new Thread(() -> {
+            try {
+                java.net.http.HttpClient c = java.net.http.HttpClient.newHttpClient();
+                java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+                        .uri(java.net.URI.create("https://api.github.com/repos/Ohualtex/Auto_Clicker/releases/latest"))
+                        .header("Accept", "application/vnd.github+json")
+                        .timeout(java.time.Duration.ofSeconds(6)).build();
+                String body = c.send(req, java.net.http.HttpResponse.BodyHandlers.ofString()).body();
+                String tag = new com.google.gson.JsonParser().parse(body).getAsJsonObject().get("tag_name").getAsString();
+                String latest = tag.startsWith("v") ? tag.substring(1) : tag;
+                if (isNewer(latest, appVersion())) {
+                    SwingUtilities.invokeLater(() -> {
+                        int r = JOptionPane.showConfirmDialog(this,
+                                String.format(Lang.get("update_msg"), latest, appVersion()),
+                                Lang.get("update_title"), JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
+                        if (r == JOptionPane.YES_OPTION) openReleasesPage();
+                    });
+                }
+            } catch (Exception ignore) { /* ag/parse hatasi: sessiz */ }
+        }, "AutoClicker-UpdateCheck");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    // "8.10" > "8.9" gibi sayisal-parcali surum karsilastirmasi
+    static boolean isNewer(String latest, String current) {
+        try {
+            String[] a = latest.split("\\."), b = current.split("\\.");
+            int n = Math.max(a.length, b.length);
+            for (int i = 0; i < n; i++) {
+                int x = i < a.length ? Integer.parseInt(a[i].trim()) : 0;
+                int y = i < b.length ? Integer.parseInt(b[i].trim()) : 0;
+                if (x != y) return x > y;
+            }
+            return false;
+        } catch (Exception e) { return false; }
+    }
+
+    private void openReleasesPage() {
+        try {
+            Desktop.getDesktop().browse(java.net.URI.create("https://github.com/Ohualtex/Auto_Clicker/releases/latest"));
+        } catch (Exception ignore) {}
     }
 
     // Sistem tepsisi ikonu: simge durumuna kuculunce gizle, tray menusunden goster/baslat-durdur/cikis

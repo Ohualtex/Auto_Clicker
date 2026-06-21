@@ -88,7 +88,17 @@ jobs:
           done
           ls -la
 
-      # NOT: Kod imzalama icin bkz. asagidaki yorum bloku (sertifika/secret gerektirir; ucretsiz yol: checksum yukarida)
+      # ---- KOD IMZALAMA (opsiyonel - SERTIFIKA gerektirir) ----
+      # Ucretsiz yol: yukaridaki SHA-256 checksum'lar butunluk dogrulamasi saglar (imza degil).
+      # Imzalamak icin repo Settings > Secrets'a sertifikalari ekleyip asagidaki adimlari etkinlestirin:
+      #   Windows: WIN_CERT_BASE64 (.pfx -> base64), WIN_CERT_PASSWORD
+      #   - name: Windows imzala (jsign)
+      #     if: runner.os == 'Windows'
+      #     shell: bash
+      #     run: |
+      #       echo "${{ secrets.WIN_CERT_BASE64 }}" | base64 -d > cert.pfx
+      #       for f in out/*.msi; do jsign --storetype PKCS12 --keystore cert.pfx --storepass "${{ secrets.WIN_CERT_PASSWORD }}" "$f"; done
+      #   macOS: APPLE_DEV_ID sertifikasi import + codesign + 'xcrun notarytool submit --wait' ile imzala/notarize.
       - name: Release'e yukle
         uses: softprops/action-gh-release@v2
         with:
